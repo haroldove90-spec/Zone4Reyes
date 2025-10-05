@@ -72,12 +72,23 @@ const App: React.FC = () => {
   
   const toggleTheme = () => setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
 
+  // Notifications
+  const handleMarkNotificationsAsRead = useCallback(() => {
+    // A small delay feels more natural, allowing the user to briefly see the unread state
+    setTimeout(() => {
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    }, 500);
+  }, []);
+
   // Navigation
   const handleNavigate = useCallback((view: View, data?: any) => {
+    if (view === 'notifications') {
+        handleMarkNotificationsAsRead();
+    }
     setActiveView(view);
     setViewData(data || null);
     window.scrollTo(0, 0);
-  }, []);
+  }, [handleMarkNotificationsAsRead]);
 
   // Auth
   const handleLogin = async (name: string, password: string): Promise<void> => {
@@ -198,7 +209,6 @@ const App: React.FC = () => {
       setUsers(users.map(u => u.id === friendId ? { ...u, friendIds: (u.friendIds || []).filter(id => id !== currentUser.id)} : u));
   };
   
-  // Notifications
   const unreadNotificationsCount = notifications.filter(n => !n.read).length;
   
   // Chat
