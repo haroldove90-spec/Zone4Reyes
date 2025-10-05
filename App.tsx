@@ -137,8 +137,10 @@ const App: React.FC = () => {
             general: { language: 'es' },
           }
       };
-      setUsers(prev => [...prev, newUser]);
+      const newUsersList = [...users, newUser];
+      setUsers(newUsersList);
       setCurrentUser(newUser);
+      localStorage.setItem('users', JSON.stringify(newUsersList)); // Save the full list synchronously
       localStorage.setItem('currentUser', JSON.stringify(newUser));
       handleNavigate('feed');
   };
@@ -486,7 +488,7 @@ const App: React.FC = () => {
          />;
       case 'menu':
         // On mobile, the menu view re-uses the LeftSidebar component
-        return <div className="md:hidden"><LeftSidebar currentUser={currentUser} onNavigate={(view, data) => handleNavigate(view as View, data)} /></div>;
+        return <div className="md:hidden"><LeftSidebar currentUser={currentUser} onNavigate={(view, data) => handleNavigate(view as View, { user: data as User })} /></div>;
       case 'feed':
       default:
         return <Feed {...feedProps} />;
@@ -531,7 +533,7 @@ const App: React.FC = () => {
         ) : (
           <div className="grid grid-cols-12 gap-4">
             <div className="hidden md:block md:col-span-3">
-              <LeftSidebar currentUser={currentUser} onNavigate={(view, data) => handleNavigate(view as View, data)} />
+              <LeftSidebar currentUser={currentUser} onNavigate={(view, data) => handleNavigate(view as View, { user: data as User })} />
             </div>
             <div className="col-span-12 md:col-span-9 lg:col-span-6">
               {renderContent()}
