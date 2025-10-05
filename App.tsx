@@ -30,7 +30,11 @@ type ViewData = {
 const App: React.FC = () => {
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
   
-  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [users, setUsers] = useState<User[]>(() => {
+    const savedUsers = localStorage.getItem('users');
+    return savedUsers ? JSON.parse(savedUsers) : initialUsers;
+  });
+  
   const [posts, setPosts] = useState<Post[]>(() => initialPosts(users));
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [notifications, setNotifications] = useState<Notification[]>(() => initialNotifications(users));
@@ -42,9 +46,9 @@ const App: React.FC = () => {
     const savedUser = localStorage.getItem('currentUser');
     if (savedUser) {
         const parsedUser = JSON.parse(savedUser);
-        // We need to find the full user object from our state, not just use the stored one
-        // as the stored one might be stale.
-        return users.find(u => u.id === parsedUser.id) || null;
+        const savedUsers = localStorage.getItem('users');
+        const currentUsers = savedUsers ? JSON.parse(savedUsers) : initialUsers;
+        return currentUsers.find((u: User) => u.id === parsedUser.id) || null;
     }
     return null;
   });
@@ -60,6 +64,11 @@ const App: React.FC = () => {
 
   const usersMap = useMemo(() => new Map(users.map(u => [u.id, u])), [users]);
   
+  // Persist users to localStorage
+  useEffect(() => {
+    localStorage.setItem('users', JSON.stringify(users));
+  }, [users]);
+
   // Theme management
   useEffect(() => {
     if (theme === 'dark') {
