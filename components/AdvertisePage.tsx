@@ -17,9 +17,9 @@ const AdCard: React.FC<{ ad: Advertisement }> = ({ ad }) => (
     {ad.mediaUrl && ad.type !== 'content' && (
       <div className="h-48 bg-gray-200 dark:bg-gray-800">
         {ad.type === 'flyer' ? (
-          <img src={ad.mediaUrl} alt={ad.title} className="w-full h-full object-cover" />
+          <img src={ad.mediaUrl} alt={ad.title} className="w-full h-full object-cover" loading="lazy" />
         ) : (
-          <video src={ad.mediaUrl} controls className="w-full h-full object-contain bg-black" />
+          <video src={ad.mediaUrl} controls preload="metadata" className="w-full h-full object-contain bg-black" />
         )}
       </div>
     )}
@@ -30,7 +30,7 @@ const AdCard: React.FC<{ ad: Advertisement }> = ({ ad }) => (
           <h3 className="font-bold text-lg text-text-primary mt-1">{ad.title}</h3>
         </div>
         <div className="text-right flex-shrink-0 ml-2">
-            <img src={ad.author.avatarUrl} alt={ad.author.name} className="w-10 h-10 rounded-full inline-block" />
+            <img src={ad.author.avatarUrl} alt={ad.author.name} className="w-10 h-10 rounded-full inline-block" loading="lazy" />
             <p className="text-xs text-text-secondary mt-1">{ad.author.name}</p>
         </div>
       </div>

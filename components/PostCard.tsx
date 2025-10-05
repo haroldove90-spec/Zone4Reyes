@@ -42,7 +42,7 @@ const CommentSection: React.FC<{
             <div className="space-y-3 mt-2">
                 {post.comments.map(comment => (
                     <div key={comment.id} className="flex items-start space-x-2">
-                        <img src={comment.author.avatarUrl} alt={comment.author.name} className="w-8 h-8 rounded-full cursor-pointer" onClick={() => onViewProfile(comment.author)}/>
+                        <img src={comment.author.avatarUrl} alt={comment.author.name} className="w-8 h-8 rounded-full cursor-pointer" onClick={() => onViewProfile(comment.author)} loading="lazy"/>
                         <div className="bg-background rounded-xl p-2 text-sm">
                             <button onClick={() => onViewProfile(comment.author)} className="font-bold text-text-primary hover:underline">{comment.author.name}</button>
                             <p className="text-text-primary">{comment.content}</p>
@@ -52,7 +52,7 @@ const CommentSection: React.FC<{
             </div>
 
             <div className="flex items-start space-x-2 mt-3">
-                <img src={currentUser.avatarUrl} alt={currentUser.name} className="w-8 h-8 rounded-full" />
+                <img src={currentUser.avatarUrl} alt={currentUser.name} className="w-8 h-8 rounded-full" loading="lazy" />
                 <form onSubmit={handleSubmitComment} className="w-full flex">
                     <input
                         type="text"
@@ -133,7 +133,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onViewProfile, current
       <div className="p-4">
         <div className="flex items-center space-x-3">
           <button onClick={() => onViewProfile(post.author)}>
-            <img src={post.author.avatarUrl} alt={post.author.name} className="w-10 h-10 rounded-full" />
+            <img src={post.author.avatarUrl} alt={post.author.name} className="w-10 h-10 rounded-full" loading="lazy" />
           </button>
           <div>
             <button onClick={() => onViewProfile(post.author)} className="font-bold text-text-primary hover:underline">{post.author.name}</button>
@@ -145,9 +145,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onViewProfile, current
       {post.media && (
         <div className="bg-gray-100 dark:bg-black/20">
           {post.media.type === 'image' ? (
-            <img src={post.media.url} alt="Post content" className="w-full h-auto max-h-[600px] object-contain" />
+            <img src={post.media.url} alt="Post content" className="w-full h-auto max-h-[600px] object-contain" loading="lazy" />
           ) : (
-            <video src={post.media.url} controls className="w-full h-auto max-h-[600px] object-contain bg-black">
+            <video src={post.media.url} controls preload="metadata" className="w-full h-auto max-h-[600px] object-contain bg-black">
                 Tu navegador no soporta la etiqueta de video.
             </video>
           )}

@@ -15,7 +15,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group, onJoin, currentUser
   return (
     <div className="bg-content-bg rounded-lg shadow-sm overflow-hidden flex flex-col">
       <div className="h-28 bg-gray-200 dark:bg-gray-800">
-        <img src={group.coverUrl} alt={`${group.name} cover`} className="w-full h-full object-cover" />
+        <img src={group.coverUrl} alt={`${group.name} cover`} className="w-full h-full object-cover" loading="lazy" />
       </div>
       <div className="p-4 flex-grow flex flex-col">
         <h3 className="font-bold text-lg text-text-primary hover:underline cursor-pointer">{group.name}</h3>

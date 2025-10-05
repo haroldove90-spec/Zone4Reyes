@@ -1,4 +1,26 @@
-import { User, Post, Message, Notification, Group, Advertisement, Story } from './types';
+import { User, Post, Message, Notification, Group, Advertisement, Story, UserSettings } from './types';
+
+const defaultSettings: UserSettings = {
+  account: {
+    email: '',
+  },
+  privacy: {
+    postVisibility: 'public',
+    profileVisibility: 'public',
+    messagePrivacy: 'public',
+    searchPrivacy: 'public',
+  },
+  notifications: {
+    likes: true,
+    comments: true,
+    mentions: true,
+    messages: true,
+    groupUpdates: true,
+  },
+  general: {
+    language: 'es',
+  },
+};
 
 export const initialUsers: User[] = [
   {
@@ -24,6 +46,12 @@ export const initialUsers: User[] = [
       'https://picsum.photos/id/50/600/400',
       'https://picsum.photos/id/60/600/400',
     ],
+    settings: {
+      ...defaultSettings,
+      account: { email: 'current.user@example.com' }
+    },
+    blockedUserIds: [],
+    isActive: true,
   },
   {
     id: 'user-1',
@@ -36,6 +64,12 @@ export const initialUsers: User[] = [
     info: { work: 'Veterinaria en "Mascotas Felices"', location: 'Vive en Los Reyes Iztacala' },
     friendIds: ['user-current', 'user-3'],
     photos: ['https://picsum.photos/id/1027/600/400', 'https://picsum.photos/id/1028/600/400'],
+    settings: {
+        ...defaultSettings,
+        account: { email: 'ana.garcia@example.com' }
+    },
+    blockedUserIds: [],
+    isActive: true,
   },
   {
     id: 'user-2',
@@ -48,6 +82,9 @@ export const initialUsers: User[] = [
     info: { work: 'Administrador de la página', location: 'Los Reyes Iztacala' },
     friendIds: ['user-current'],
     photos: ['https://picsum.photos/id/1060/600/400'],
+    settings: defaultSettings,
+    blockedUserIds: [],
+    isActive: true,
   },
   {
     id: 'user-3',
@@ -60,6 +97,9 @@ export const initialUsers: User[] = [
     info: { work: 'Ingeniero en Sistemas', education: 'Estudió en IPN', location: 'Vive en Los Reyes Iztacala' },
     friendIds: ['user-current', 'user-1'],
     photos: ['https://picsum.photos/id/146/600/400', 'https://picsum.photos/id/147/600/400'],
+    settings: defaultSettings,
+    blockedUserIds: [],
+    isActive: true,
   },
   {
     id: 'user-4',
@@ -72,6 +112,9 @@ export const initialUsers: User[] = [
     info: { work: 'Mecánico automotriz', location: 'Vive en Los Reyes Iztacala' },
     friendIds: ['user-current'],
     photos: ['https://picsum.photos/id/1011/600/400'],
+    settings: defaultSettings,
+    blockedUserIds: [],
+    isActive: true,
   }
 ];
 

@@ -3,9 +3,10 @@ import { Icon } from './Icon';
 import { User, Group } from '../types';
 
 interface BottomNavProps {
-    onNavigate: (view: 'feed' | 'profile' | 'auth' | 'groups' | 'notifications' | 'search' | 'advertise', data?: User | Group) => void;
+    onNavigate: (view: 'feed' | 'profile' | 'auth' | 'groups' | 'notifications' | 'search' | 'advertise' | 'menu', data?: User | Group) => void;
     currentUser: User | null;
-    activeView: 'feed' | 'profile' | 'auth' | 'chat' | 'notifications' | 'groups' | 'search' | 'advertise';
+    // FIX: Add 'settings' to the activeView type to allow correct comparison for highlighting the menu button.
+    activeView: 'feed' | 'profile' | 'auth' | 'chat' | 'notifications' | 'groups' | 'search' | 'advertise' | 'menu' | 'settings';
     unreadNotifications: number;
 }
 
@@ -62,18 +63,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({ onNavigate, currentUser, a
                     isActive={activeView === 'notifications'}
                     badgeCount={unreadNotifications}
                 />
-                 <NavButton
-                    iconPath="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    label="Buscar"
-                    onClick={() => onNavigate('search')}
-                    isActive={activeView === 'search'}
-                />
                 {currentUser ? (
                     <NavButton
-                        iconPath="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                        label="Mi Perfil"
-                        onClick={() => onNavigate('profile', currentUser)}
-                        isActive={activeView === 'profile'}
+                        iconPath="M4 6h16M4 12h16M4 18h16"
+                        label="Menú"
+                        onClick={() => onNavigate('menu')}
+                        isActive={activeView === 'menu' || activeView === 'settings'}
                     />
                 ) : (
                     <NavButton

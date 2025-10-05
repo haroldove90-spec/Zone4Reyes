@@ -32,7 +32,7 @@ export const ProfileFriends: React.FC<ProfileFriendsProps> = ({ user, onViewProf
         {friendsToShow.map(friend => (
           <div key={friend.id}>
             <a href="#" onClick={(e) => { e.preventDefault(); onViewProfile(friend); }} className="block group">
-              <img src={friend.avatarUrl} alt={friend.name} className="w-full aspect-square object-cover rounded-lg" />
+              <img src={friend.avatarUrl} alt={friend.name} className="w-full aspect-square object-cover rounded-lg" loading="lazy" />
               <p className="text-sm font-semibold text-text-primary mt-1 truncate group-hover:underline">{friend.name}</p>
             </a>
           </div>

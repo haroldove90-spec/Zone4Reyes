@@ -4,7 +4,7 @@ import { User } from '../types';
 import { ThemeToggle } from './ThemeToggle';
 
 interface HeaderProps {
-    onNavigate: (view: 'feed' | 'profile' | 'auth' | 'notifications' | 'advertise', user?: User) => void;
+    onNavigate: (view: 'feed' | 'profile' | 'auth' | 'notifications' | 'advertise' | 'settings', user?: User) => void;
     currentUser: User | null;
     theme: string;
     toggleTheme: () => void;
@@ -109,7 +109,7 @@ export const Header: React.FC<HeaderProps> = ({
                   {isMenuOpen && (
                     <div className="absolute right-0 mt-2 w-48 bg-content-bg rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 dark:ring-gray-700">
                       <button onClick={() => { onNavigate('profile', currentUser); setIsMenuOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-text-primary hover:bg-gray-100 dark:hover:bg-gray-700">Mi Perfil</button>
-                      <a href="#" className="block px-4 py-2 text-sm text-text-primary hover:bg-gray-100 dark:hover:bg-gray-700">Configuración</a>
+                      <button onClick={() => { onNavigate('settings'); setIsMenuOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-text-primary hover:bg-gray-100 dark:hover:bg-gray-700">Configuración</button>
                       <button onClick={() => { onLogout(); setIsMenuOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-text-primary hover:bg-gray-100 dark:hover:bg-gray-700">Cerrar Sesión</button>
                     </div>
                   )}

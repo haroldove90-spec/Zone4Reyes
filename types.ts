@@ -1,3 +1,27 @@
+export interface UserSettings {
+  account: {
+    email?: string;
+    phone?: string;
+  };
+  privacy: {
+    postVisibility: 'public' | 'friends' | 'only_me';
+    profileVisibility: 'public' | 'friends';
+    messagePrivacy: 'public' | 'friends';
+    searchPrivacy: 'public' | 'friends';
+  };
+  notifications: {
+    likes: boolean;
+    comments: boolean;
+    mentions: boolean;
+    messages: boolean;
+    groupUpdates: boolean;
+  };
+  general: {
+    language: 'es' | 'en';
+  };
+}
+
+
 export interface User {
   id: string;
   name: string;
@@ -15,6 +39,9 @@ export interface User {
   friendIds?: string[];
   photos?: string[];
   groups?: GroupMembership[];
+  settings: UserSettings;
+  blockedUserIds?: string[];
+  isActive: boolean;
 }
 
 export interface Comment {

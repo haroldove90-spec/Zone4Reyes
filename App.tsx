@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { User, Post, Message, Notification, Group, Advertisement, Story, Comment } from './types';
+import { User, Post, Message, Notification, Group, Advertisement, Story, Comment, UserSettings } from './types';
 import { initialUsers, initialPosts, initialMessages, initialNotifications, initialGroups, initialAdvertisements, initialStories } from './mockData';
 import { Header } from './components/Header';
 import { LeftSidebar } from './components/LeftSidebar';
@@ -17,8 +17,9 @@ import { StoryViewer } from './components/stories/StoryViewer';
 import { CreateStoryModal } from './components/stories/CreateStoryModal';
 import { SearchPage } from './components/SearchPage';
 import { InstallPWA } from './components/InstallPWA';
+import { SettingsPage } from './components/settings/SettingsPage';
 
-type View = 'feed' | 'profile' | 'auth' | 'notifications' | 'chat' | 'groups' | 'advertise' | 'search';
+type View = 'feed' | 'profile' | 'auth' | 'notifications' | 'chat' | 'groups' | 'advertise' | 'search' | 'settings' | 'menu';
 
 type ViewData = {
   user?: User;
@@ -48,7 +49,8 @@ const App: React.FC = () => {
         const parsedUser = JSON.parse(savedUser);
         const savedUsers = localStorage.getItem('users');
         const currentUsers = savedUsers ? JSON.parse(savedUsers) : initialUsers;
-        return currentUsers.find((u: User) => u.id === parsedUser.id) || null;
+        const foundUser = currentUsers.find((u: User) => u.id === parsedUser.id);
+        return foundUser && foundUser.isActive ? foundUser : null;
     }
     return null;
   });
@@ -83,7 +85,6 @@ const App: React.FC = () => {
 
   // Notifications
   const handleMarkNotificationsAsRead = useCallback(() => {
-    // A small delay feels more natural, allowing the user to briefly see the unread state
     setTimeout(() => {
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     }, 500);
@@ -103,6 +104,9 @@ const App: React.FC = () => {
   const handleLogin = async (name: string, password: string): Promise<void> => {
     const user = users.find(u => u.name === name && u.password === password);
     if (user) {
+      if (!user.isActive) {
+        throw new Error('Esta cuenta ha sido desactivada.');
+      }
       setCurrentUser(user);
       localStorage.setItem('currentUser', JSON.stringify(user));
       handleNavigate('feed');
@@ -124,6 +128,14 @@ const App: React.FC = () => {
           coverUrl: `https://picsum.photos/seed/${Date.now()}-cover/1000/300`,
           friendIds: [],
           photos: [],
+          isActive: true,
+          blockedUserIds: [],
+          settings: {
+            account: { email: '' },
+            privacy: { postVisibility: 'public', profileVisibility: 'public', messagePrivacy: 'public', searchPrivacy: 'public' },
+            notifications: { likes: true, comments: true, mentions: true, messages: true, groupUpdates: true },
+            general: { language: 'es' },
+          }
       };
       setUsers(prev => [...prev, newUser]);
       setCurrentUser(newUser);
@@ -192,13 +204,44 @@ const App: React.FC = () => {
     ));
   };
   
-  // Profile
+  // Profile & Settings
   const handleUpdateProfile = (updatedData: Partial<User>) => {
     if (!currentUser) return;
-    const updatedUser = { ...currentUser, ...updatedData };
-    setCurrentUser(updatedUser);
-    setUsers(users.map(u => u.id === updatedUser.id ? updatedUser : u));
-    localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+    setCurrentUser(prevUser => {
+        if(!prevUser) return null;
+        const updatedUser = { ...prevUser, ...updatedData };
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+        setUsers(prevUsers => prevUsers.map(u => (u.id === updatedUser.id ? updatedUser : u)));
+        return updatedUser;
+    });
+  };
+
+  const handleUpdateUserSettings = (updatedSettings: Partial<UserSettings>) => {
+     if (!currentUser) return;
+     const newSettings = {
+        ...currentUser.settings,
+        ...updatedSettings,
+        account: { ...currentUser.settings.account, ...updatedSettings.account },
+        privacy: { ...currentUser.settings.privacy, ...updatedSettings.privacy },
+        notifications: { ...currentUser.settings.notifications, ...updatedSettings.notifications },
+        general: { ...currentUser.settings.general, ...updatedSettings.general },
+     };
+     handleUpdateProfile({ settings: newSettings });
+  };
+
+  const handleChangePassword = (newPassword: string) => {
+    handleUpdateProfile({ password: newPassword });
+  };
+
+  const handleDeactivateAccount = () => {
+    handleUpdateProfile({ isActive: false });
+    handleLogout();
+  };
+  
+  const handleDeleteAccount = () => {
+    if (!currentUser) return;
+    setUsers(prev => prev.filter(u => u.id !== currentUser.id));
+    handleLogout();
   };
 
   const handleUpdateAvatar = (base64: string) => handleUpdateProfile({ avatarUrl: base64 });
@@ -206,18 +249,59 @@ const App: React.FC = () => {
 
   // Friends
   const handleAddFriend = (friendId: string) => {
-      if(!currentUser) return;
-      handleUpdateProfile({ friendIds: [...(currentUser.friendIds || []), friendId] });
-      // Also add current user to the other user's friend list
-      setUsers(users.map(u => u.id === friendId ? { ...u, friendIds: [...(u.friendIds || []), currentUser.id]} : u));
+    setCurrentUser(prevCurrentUser => {
+      if (!prevCurrentUser) return null;
+      
+      const newFriendIds = [...(prevCurrentUser.friendIds || []), friendId];
+      const updatedUser = { ...prevCurrentUser, friendIds: newFriendIds };
+      
+      setUsers(prevUsers => {
+          const usersWithUpdatedSelf = prevUsers.map(u => 
+              u.id === updatedUser.id ? updatedUser : u
+          );
+          return usersWithUpdatedSelf.map(u => 
+              u.id === friendId ? { ...u, friendIds: [...(u.friendIds || []), updatedUser.id] } : u
+          );
+      });
+
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      return updatedUser;
+    });
   };
 
   const handleRemoveFriend = (friendId: string) => {
-      if(!currentUser) return;
-      handleUpdateProfile({ friendIds: (currentUser.friendIds || []).filter(id => id !== friendId) });
-      setUsers(users.map(u => u.id === friendId ? { ...u, friendIds: (u.friendIds || []).filter(id => id !== currentUser.id)} : u));
+      setCurrentUser(prevCurrentUser => {
+        if (!prevCurrentUser) return null;
+        
+        const newFriendIds = (prevCurrentUser.friendIds || []).filter(id => id !== friendId);
+        const updatedUser = { ...prevCurrentUser, friendIds: newFriendIds };
+
+        setUsers(prevUsers => {
+            const usersWithUpdatedSelf = prevUsers.map(u => 
+                u.id === updatedUser.id ? updatedUser : u
+            );
+            return usersWithUpdatedSelf.map(u => 
+                u.id === friendId ? { ...u, friendIds: (u.friendIds || []).filter(id => id !== updatedUser.id) } : u
+            );
+        });
+        
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+        return updatedUser;
+    });
   };
   
+  const handleBlockUser = (userIdToBlock: string) => {
+    handleUpdateProfile({
+        blockedUserIds: [...(currentUser?.blockedUserIds || []), userIdToBlock]
+    });
+  };
+  
+  const handleUnblockUser = (userIdToUnblock: string) => {
+      handleUpdateProfile({
+          blockedUserIds: (currentUser?.blockedUserIds || []).filter(id => id !== userIdToUnblock)
+      });
+  };
+
   const unreadNotificationsCount = notifications.filter(n => !n.read).length;
   
   // Chat
@@ -386,6 +470,23 @@ const App: React.FC = () => {
             onToggleLike={handleToggleLike}
             onSharePost={handleSharePost}
         />
+       case 'settings':
+         if (!currentUser) return <AuthPage onLogin={handleLogin} onRegister={handleRegister} />;
+         return <SettingsPage
+            currentUser={currentUser}
+            users={users}
+            onUpdateSettings={handleUpdateUserSettings}
+            onChangePassword={handleChangePassword}
+            onDeactivateAccount={handleDeactivateAccount}
+            onDeleteAccount={handleDeleteAccount}
+            onBlockUser={handleBlockUser}
+            onUnblockUser={handleUnblockUser}
+            onNavigate={handleNavigate}
+            toggleTheme={toggleTheme}
+         />;
+      case 'menu':
+        // On mobile, the menu view re-uses the LeftSidebar component
+        return <div className="md:hidden"><LeftSidebar currentUser={currentUser} onNavigate={(view, data) => handleNavigate(view as View, data)} /></div>;
       case 'feed':
       default:
         return <Feed {...feedProps} />;
@@ -425,7 +526,7 @@ const App: React.FC = () => {
         />
       )}
       <main className={`max-w-screen-xl mx-auto px-2 sm:px-4 ${mainContentPadding}`}>
-        {activeView === 'auth' ? (
+        {activeView === 'auth' || activeView === 'settings' ? (
           renderContent()
         ) : (
           <div className="grid grid-cols-12 gap-4">

@@ -21,7 +21,7 @@ const StoryThumbnail: React.FC<{
   return (
     <button onClick={onClick} className="flex flex-col items-center space-y-1 w-20 flex-shrink-0">
       <div className={`relative w-16 h-16 rounded-full ring-2 ${isCurrentUser ? '' : ringClass} ring-offset-2 ring-offset-content-bg p-0.5`}>
-        <img src={user.avatarUrl} alt={user.name} className="w-full h-full rounded-full object-cover" />
+        <img src={user.avatarUrl} alt={user.name} className="w-full h-full rounded-full object-cover" loading="lazy" />
         {isCurrentUser && (
           <div className="absolute bottom-0 right-0 bg-primary text-white rounded-full h-6 w-6 flex items-center justify-center border-2 border-content-bg">
             <Icon path="M12 6v6m0 0v6m0-6h6m-6 0H6" className="w-4 h-4" />

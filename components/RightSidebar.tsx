@@ -42,14 +42,14 @@ export const RightSidebar: React.FC = () => {
         <h3 className="font-bold text-lg text-text-primary mb-3">Negocios Locales</h3>
         <div className="space-y-4">
             <a href="#" className="flex items-center space-x-3 group">
-                <img src="https://picsum.photos/id/1060/200/200" className="w-16 h-16 rounded-lg object-cover"/>
+                <img src="https://picsum.photos/id/1060/200/200" className="w-16 h-16 rounded-lg object-cover" loading="lazy"/>
                 <div>
                     <h4 className="font-semibold text-text-primary group-hover:text-primary transition-colors">El Sazón de la Abuela</h4>
                     <p className="text-sm text-text-secondary">Comida casera con amor.</p>
                 </div>
             </a>
             <a href="#" className="flex items-center space-x-3 group">
-                <img src="https://picsum.photos/id/1025/200/200" className="w-16 h-16 rounded-lg object-cover"/>
+                <img src="https://picsum.photos/id/1025/200/200" className="w-16 h-16 rounded-lg object-cover" loading="lazy"/>
                 <div>
                     <h4 className="font-semibold text-text-primary group-hover:text-primary transition-colors">Estética 'Bella Reyes'</h4>
                     <p className="text-sm text-text-secondary">Tu mejor look, cerca de ti.</p>
