@@ -29,7 +29,7 @@ type ViewData = {
 }
 
 const App: React.FC = () => {
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
   
   const [users, setUsers] = useState<User[]>(() => {
     try {
@@ -132,7 +132,7 @@ const App: React.FC = () => {
     localStorage.setItem('theme', theme);
   }, [theme]);
   
-  const toggleTheme = () => setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
+  const toggleTheme = () => setTheme(prevTheme => prevTheme === 'dark' ? 'light' : 'dark');
 
   // Notifications
   const handleMarkNotificationsAsRead = useCallback(() => {
@@ -255,12 +255,31 @@ const App: React.FC = () => {
   // Profile & Settings
   const handleUpdateProfile = (updatedData: Partial<User>) => {
     if (!currentUser) return;
-    setCurrentUser(prevUser => {
-        if(!prevUser) return null;
-        const updatedUser = { ...prevUser, ...updatedData };
-        setUsers(prevUsers => prevUsers.map(u => (u.id === updatedUser.id ? updatedUser : u)));
-        return updatedUser;
-    });
+
+    const updatedUser = { ...currentUser, ...updatedData };
+
+    setCurrentUser(updatedUser);
+
+    setUsers(prevUsers => prevUsers.map(u => (u.id === updatedUser.id ? updatedUser : u)));
+
+    // Propagate the user update to other parts of the state to avoid stale data
+    setPosts(prevPosts =>
+      prevPosts.map(post => {
+        const newPost = post.author.id === updatedUser.id ? { ...post, author: updatedUser } : post;
+        const newComments = newPost.comments.map(comment =>
+          comment.author.id === updatedUser.id ? { ...comment, author: updatedUser } : comment
+        );
+        return { ...newPost, comments: newComments };
+      })
+    );
+    setStories(prevStories => prevStories.map(story => (story.author.id === updatedUser.id ? { ...story, author: updatedUser } : story)));
+    setAdvertisements(prevAds => prevAds.map(ad => (ad.author.id === updatedUser.id ? { ...ad, author: updatedUser } : ad)));
+    setNotifications(prevNotifs => prevNotifs.map(notif => (notif.actor.id === updatedUser.id ? { ...notif, actor: updatedUser } : notif)));
+
+    // If viewing the current user's profile, update the viewData to trigger a re-render with the new user object
+    if (activeView === 'profile' && viewData?.user?.id === currentUser.id) {
+      setViewData(prevData => ({ ...prevData, user: updatedUser }));
+    }
   };
 
   const handleUpdateUserSettings = (updatedSettings: Partial<UserSettings>) => {

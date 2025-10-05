@@ -55,6 +55,14 @@
       }
     </style>
     <script>
+      // Set theme based on localStorage or default to dark to prevent FOUC
+      if (localStorage.getItem('theme') === 'light') {
+        document.documentElement.classList.remove('dark');
+      } else {
+        document.documentElement.classList.add('dark');
+      }
+    </script>
+    <script>
       tailwind.config = {
         darkMode: 'class',
         theme: {
