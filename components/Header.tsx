@@ -23,10 +23,13 @@ export const Header: React.FC<HeaderProps> = ({
     onSearch
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
+    // Set the initial state safely on the client
+    setIsFullscreen(!!document.fullscreenElement);
+    
     const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
