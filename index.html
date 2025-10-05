@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zone4Reyes</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#1B74E4" />
+
+    <!-- iOS PWA Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Zone4Reyes">
+    <link rel="apple-touch-icon" href="https://appdesignmex.com/netbandera/wp-content/uploads/2025/10/Zone4Reyes-03-1.png">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --color-primary-default: #1B74E4;
+        --color-primary-dark: #1864C6;
+        --color-secondary: #42B72A;
+        --color-background: #F0F2F5;
+        --color-content-bg: #FFFFFF;
+        --color-text-primary: #050505;
+        --color-text-secondary: #65676B;
+        --color-divider: #CED0D4;
+      }
+      html.dark {
+        --color-primary-default: #1B74E4;
+        --color-primary-dark: #1864C6;
+        --color-secondary: #42B72A;
+        --color-background: #0F172A;
+        --color-content-bg: #1E293B;
+        --color-text-primary: #F8FAFC;
+        --color-text-secondary: #94A3B8;
+        --color-divider: #334155;
+      }
+      body {
+        background-color: var(--color-background);
+        color: var(--color-text-primary);
+        transition: background-color 0.3s, color 0.3s;
+      }
+      @keyframes slide-up {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+      }
+      .animate-slide-up {
+        animation: slide-up 0.3s ease-out;
+      }
+    </style>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                DEFAULT: 'var(--color-primary-default)',
+                dark: 'var(--color-primary-dark)'
+              },
+              secondary: 'var(--color-secondary)',
+              background: 'var(--color-background)',
+              'content-bg': 'var(--color-content-bg)',
+              'text-primary': 'var(--color-text-primary)',
+              'text-secondary': 'var(--color-text-secondary)',
+              'divider': 'var(--color-divider)',
+              'auth-button': '#0F172A',
+            }
+          }
+        }
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

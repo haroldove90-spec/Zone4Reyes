@@ -1,0 +1,8 @@
+{
+  "name": "Zone4Reyes",
+  "description": "A local social network for the community of Los Reyes Iztacala, designed to connect neighbors, promote local businesses, and strengthen community bonds. This is a functional MVP prototype showcasing the core user interface and experience.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
