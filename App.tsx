@@ -28,69 +28,79 @@ type ViewData = {
   targetUser?: User;
 }
 
+// This function centralizes all initial state logic, ensuring that
+// different state slices are initialized from a consistent snapshot
+// of the persisted data, fixing the user persistence bug.
+function getInitialState() {
+  // 1. Get users, which is the base for many other states.
+  let users: User[];
+  try {
+    const savedUsers = localStorage.getItem('users');
+    users = savedUsers ? JSON.parse(savedUsers) : initialUsers;
+  } catch (e) {
+    console.error("Failed to parse users from localStorage", e);
+    users = initialUsers;
+  }
+  const usersMap = new Map(users.map(u => [u.id, u]));
+
+  // 2. Get posts and re-hydrate them with up-to-date user data.
+  let posts: Post[];
+  try {
+    const savedPosts = localStorage.getItem('posts');
+    if (savedPosts) {
+      const parsedPosts = JSON.parse(savedPosts) as Post[];
+      posts = parsedPosts.map(post => ({
+        ...post,
+        author: usersMap.get(post.author.id) || post.author,
+        comments: post.comments.map(comment => ({
+          ...comment,
+          author: usersMap.get(comment.author.id) || comment.author,
+        }))
+      }));
+    } else {
+      posts = initialPosts(users);
+    }
+  } catch (e) {
+    console.error("Failed to parse posts from localStorage", e);
+    posts = initialPosts(users);
+  }
+
+  // 3. Get the current user from storage and find the full, up-to-date user object.
+  let currentUser: User | null = null;
+  try {
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+      const parsedUser = JSON.parse(savedUser);
+      const foundUser = users.find((u: User) => u.id === parsedUser.id);
+      currentUser = foundUser && foundUser.isActive ? foundUser : null;
+    }
+  } catch (e) {
+    console.error("Failed to parse currentUser from localStorage", e);
+    currentUser = null;
+  }
+
+  // 4. Initialize other data that depends on the initial user list.
+  const notifications = initialNotifications(users);
+  const advertisements = initialAdvertisements(users);
+  const stories = initialStories(users).filter(s => s.timestamp > Date.now() - 24 * 60 * 60 * 1000);
+
+  return { users, posts, currentUser, notifications, advertisements, stories };
+}
+
+// Run it once when the module loads.
+const initialState = getInitialState();
+
 const App: React.FC = () => {
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
   
-  const [users, setUsers] = useState<User[]>(() => {
-    try {
-      const savedUsers = localStorage.getItem('users');
-      return savedUsers ? JSON.parse(savedUsers) : initialUsers;
-    } catch (e) {
-      console.error("Failed to parse users from localStorage", e);
-      return initialUsers;
-    }
-  });
-  
-  const [posts, setPosts] = useState<Post[]>(() => {
-    const currentUsers = (() => {
-        try {
-            const savedUsers = localStorage.getItem('users');
-            return savedUsers ? JSON.parse(savedUsers) as User[] : initialUsers;
-        } catch (e) {
-            console.error("Failed to parse users from localStorage, using initial users.", e);
-            return initialUsers;
-        }
-    })();
-    const usersMapForInit = new Map(currentUsers.map(u => [u.id, u]));
-    
-    const savedPosts = localStorage.getItem('posts');
-    if (savedPosts) {
-        try {
-            const parsedPosts = JSON.parse(savedPosts) as Post[];
-            // Re-hydrate author and comment author data to ensure it's up-to-date
-            return parsedPosts.map(post => ({
-                ...post,
-                author: usersMapForInit.get(post.author.id) || post.author,
-                comments: post.comments.map(comment => ({
-                    ...comment,
-                    author: usersMapForInit.get(comment.author.id) || comment.author,
-                }))
-            }));
-        } catch (e) {
-            console.error("Failed to parse posts from localStorage, using initial posts.", e);
-            return initialPosts(currentUsers);
-        }
-    }
-    return initialPosts(currentUsers);
-  });
-
+  const [users, setUsers] = useState<User[]>(initialState.users);
+  const [posts, setPosts] = useState<Post[]>(initialState.posts);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
-  const [notifications, setNotifications] = useState<Notification[]>(() => initialNotifications(users));
+  const [notifications, setNotifications] = useState<Notification[]>(initialState.notifications);
   const [groups, setGroups] = useState<Group[]>(initialGroups);
-  const [advertisements, setAdvertisements] = useState<Advertisement[]>(() => initialAdvertisements(users));
-  const [stories, setStories] = useState<Story[]>(() => initialStories(users).filter(s => s.timestamp > Date.now() - 24 * 60 * 60 * 1000));
-
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-        const parsedUser = JSON.parse(savedUser);
-        const savedUsers = localStorage.getItem('users');
-        const currentUsers = savedUsers ? JSON.parse(savedUsers) : initialUsers;
-        const foundUser = currentUsers.find((u: User) => u.id === parsedUser.id);
-        return foundUser && foundUser.isActive ? foundUser : null;
-    }
-    return null;
-  });
+  const [advertisements, setAdvertisements] = useState<Advertisement[]>(initialState.advertisements);
+  const [stories, setStories] = useState<Story[]>(initialState.stories);
+  const [currentUser, setCurrentUser] = useState<User | null>(initialState.currentUser);
 
   const [activeView, setActiveView] = useState<View>('feed');
   const [viewData, setViewData] = useState<ViewData | null>(null);
@@ -121,6 +131,18 @@ const App: React.FC = () => {
       localStorage.removeItem('currentUser');
     }
   }, [currentUser]);
+
+  // Sync state across tabs
+  useEffect(() => {
+    const syncTabs = (event: StorageEvent) => {
+        if (event.key === 'users' || event.key === 'posts' || event.key === 'currentUser') {
+            console.log('Reloading tab to sync storage changes.');
+            window.location.reload();
+        }
+    };
+    window.addEventListener('storage', syncTabs);
+    return () => window.removeEventListener('storage', syncTabs);
+  }, []);
 
   // Theme management
   useEffect(() => {
@@ -275,11 +297,6 @@ const App: React.FC = () => {
     setStories(prevStories => prevStories.map(story => (story.author.id === updatedUser.id ? { ...story, author: updatedUser } : story)));
     setAdvertisements(prevAds => prevAds.map(ad => (ad.author.id === updatedUser.id ? { ...ad, author: updatedUser } : ad)));
     setNotifications(prevNotifs => prevNotifs.map(notif => (notif.actor.id === updatedUser.id ? { ...notif, actor: updatedUser } : notif)));
-
-    // If viewing the current user's profile, update the viewData to trigger a re-render with the new user object
-    if (activeView === 'profile' && viewData?.user?.id === currentUser.id) {
-      setViewData(prevData => ({ ...prevData, user: updatedUser }));
-    }
   };
 
   const handleUpdateUserSettings = (updatedSettings: Partial<UserSettings>) => {
@@ -315,6 +332,10 @@ const App: React.FC = () => {
 
   // Friends
   const handleAddFriend = (friendId: string) => {
+    if (!currentUser) return;
+    const friendUser = users.find(u => u.id === friendId);
+    if (!friendUser) return;
+
     setCurrentUser(prevCurrentUser => {
       if (!prevCurrentUser) return null;
       
@@ -330,6 +351,17 @@ const App: React.FC = () => {
           );
       });
       
+      // Create notification for current user, actor is the new friend
+      const newNotification: Notification = {
+          id: `notif-${Date.now()}`,
+          type: 'friend_request',
+          actor: friendUser,
+          message: 'ahora es tu amigo.',
+          read: false,
+          timestamp: Date.now(),
+      };
+      setNotifications(prev => [newNotification, ...prev]);
+
       return updatedUser;
     });
   };
@@ -476,11 +508,15 @@ const App: React.FC = () => {
     switch (activeView) {
       case 'profile':
         if (viewData?.user) {
-          const userPosts = posts.filter(p => p.author.id === viewData.user?.id);
+          // FIX: If viewing the current user's profile, pass the up-to-date `currentUser` object
+          // from state instead of the potentially stale `viewData.user`. This prevents rendering
+          // issues after profile updates.
+          const profileUser = currentUser?.id === viewData.user.id ? currentUser : viewData.user;
+          const userPosts = posts.filter(p => p.author.id === profileUser.id);
           return <ProfilePage 
-            user={viewData.user} 
+            user={profileUser} 
             posts={userPosts}
-            isCurrentUser={currentUser?.id === viewData.user.id}
+            isCurrentUser={currentUser?.id === profileUser.id}
             onCreatePost={handleCreatePost}
             onViewProfile={(user) => handleNavigate('profile', { user })}
             currentUser={currentUser}
