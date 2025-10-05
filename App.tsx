@@ -65,17 +65,16 @@ function getInitialState() {
     posts = initialPosts(users);
   }
 
-  // 3. Get the current user from storage and find the full, up-to-date user object.
+  // 3. Get the current user ID from storage and find the full, up-to-date user object.
   let currentUser: User | null = null;
   try {
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-      const parsedUser = JSON.parse(savedUser);
-      const foundUser = users.find((u: User) => u.id === parsedUser.id);
+    const savedUserId = localStorage.getItem('currentUserId');
+    if (savedUserId) {
+      const foundUser = users.find((u: User) => u.id === savedUserId);
       currentUser = foundUser && foundUser.isActive ? foundUser : null;
     }
   } catch (e) {
-    console.error("Failed to parse currentUser from localStorage", e);
+    console.error("Failed to process currentUserId from localStorage", e);
     currentUser = null;
   }
 
@@ -123,19 +122,19 @@ const App: React.FC = () => {
     localStorage.setItem('posts', JSON.stringify(posts));
   }, [posts]);
 
-  // Persist current user to localStorage whenever the state changes
+  // Persist current user's ID to localStorage whenever the state changes for session management
   useEffect(() => {
     if (currentUser) {
-      localStorage.setItem('currentUser', JSON.stringify(currentUser));
+      localStorage.setItem('currentUserId', currentUser.id);
     } else {
-      localStorage.removeItem('currentUser');
+      localStorage.removeItem('currentUserId');
     }
   }, [currentUser]);
 
   // Sync state across tabs
   useEffect(() => {
     const syncTabs = (event: StorageEvent) => {
-        if (event.key === 'users' || event.key === 'posts' || event.key === 'currentUser') {
+        if (event.key === 'users' || event.key === 'posts' || event.key === 'currentUserId') {
             console.log('Reloading tab to sync storage changes.');
             window.location.reload();
         }
