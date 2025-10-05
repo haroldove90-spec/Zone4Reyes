@@ -23,7 +23,7 @@ const NavButton: React.FC<{
     return (
         <button
             onClick={onClick}
-            className={`relative flex flex-col items-center justify-center space-y-1 w-full pt-2 pb-1 transition-colors ${
+            className={`relative flex flex-1 flex-col items-center justify-center space-y-1 pt-2 pb-1 transition-colors ${
                 isActive ? activeColorClass : 'text-text-secondary hover:text-primary'
             }`}
         >

@@ -87,7 +87,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user, currentUser,
              <p className="text-text-secondary">{user.friendIds?.length ?? 0} amigos</p>
              {user.bio && <p className="mt-2 text-text-secondary">{user.bio}</p>}
            </div>
-           <div className="mt-4 sm:mt-0 flex justify-center sm:justify-end items-center space-x-2">
+           <div className="mt-4 sm:mt-0 flex flex-wrap justify-center sm:justify-end items-center gap-2">
             {isCurrentUser ? (
                 <>
                     <button 

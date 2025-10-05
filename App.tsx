@@ -32,11 +32,48 @@ const App: React.FC = () => {
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
   
   const [users, setUsers] = useState<User[]>(() => {
-    const savedUsers = localStorage.getItem('users');
-    return savedUsers ? JSON.parse(savedUsers) : initialUsers;
+    try {
+      const savedUsers = localStorage.getItem('users');
+      return savedUsers ? JSON.parse(savedUsers) : initialUsers;
+    } catch (e) {
+      console.error("Failed to parse users from localStorage", e);
+      return initialUsers;
+    }
   });
   
-  const [posts, setPosts] = useState<Post[]>(() => initialPosts(users));
+  const [posts, setPosts] = useState<Post[]>(() => {
+    const currentUsers = (() => {
+        try {
+            const savedUsers = localStorage.getItem('users');
+            return savedUsers ? JSON.parse(savedUsers) as User[] : initialUsers;
+        } catch (e) {
+            console.error("Failed to parse users from localStorage, using initial users.", e);
+            return initialUsers;
+        }
+    })();
+    const usersMapForInit = new Map(currentUsers.map(u => [u.id, u]));
+    
+    const savedPosts = localStorage.getItem('posts');
+    if (savedPosts) {
+        try {
+            const parsedPosts = JSON.parse(savedPosts) as Post[];
+            // Re-hydrate author and comment author data to ensure it's up-to-date
+            return parsedPosts.map(post => ({
+                ...post,
+                author: usersMapForInit.get(post.author.id) || post.author,
+                comments: post.comments.map(comment => ({
+                    ...comment,
+                    author: usersMapForInit.get(comment.author.id) || comment.author,
+                }))
+            }));
+        } catch (e) {
+            console.error("Failed to parse posts from localStorage, using initial posts.", e);
+            return initialPosts(currentUsers);
+        }
+    }
+    return initialPosts(currentUsers);
+  });
+
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [notifications, setNotifications] = useState<Notification[]>(() => initialNotifications(users));
   const [groups, setGroups] = useState<Group[]>(initialGroups);
@@ -66,10 +103,24 @@ const App: React.FC = () => {
 
   const usersMap = useMemo(() => new Map(users.map(u => [u.id, u])), [users]);
   
-  // Persist users to localStorage
+  // Persist users to localStorage whenever the state changes
   useEffect(() => {
     localStorage.setItem('users', JSON.stringify(users));
   }, [users]);
+  
+  // Persist posts to localStorage whenever the state changes
+  useEffect(() => {
+    localStorage.setItem('posts', JSON.stringify(posts));
+  }, [posts]);
+
+  // Persist current user to localStorage whenever the state changes
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('currentUser');
+    }
+  }, [currentUser]);
 
   // Theme management
   useEffect(() => {
@@ -108,7 +159,6 @@ const App: React.FC = () => {
         throw new Error('Esta cuenta ha sido desactivada.');
       }
       setCurrentUser(user);
-      localStorage.setItem('currentUser', JSON.stringify(user));
       handleNavigate('feed');
     } else {
       throw new Error('Nombre de usuario o contraseña incorrectos.');
@@ -137,17 +187,13 @@ const App: React.FC = () => {
             general: { language: 'es' },
           }
       };
-      const newUsersList = [...users, newUser];
-      setUsers(newUsersList);
+      setUsers(prevUsers => [...prevUsers, newUser]);
       setCurrentUser(newUser);
-      localStorage.setItem('users', JSON.stringify(newUsersList)); // Save the full list synchronously
-      localStorage.setItem('currentUser', JSON.stringify(newUser));
       handleNavigate('feed');
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
-    localStorage.removeItem('currentUser');
     handleNavigate('feed');
   };
 
@@ -212,7 +258,6 @@ const App: React.FC = () => {
     setCurrentUser(prevUser => {
         if(!prevUser) return null;
         const updatedUser = { ...prevUser, ...updatedData };
-        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
         setUsers(prevUsers => prevUsers.map(u => (u.id === updatedUser.id ? updatedUser : u)));
         return updatedUser;
     });
@@ -265,8 +310,7 @@ const App: React.FC = () => {
               u.id === friendId ? { ...u, friendIds: [...(u.friendIds || []), updatedUser.id] } : u
           );
       });
-
-      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      
       return updatedUser;
     });
   };
@@ -287,7 +331,6 @@ const App: React.FC = () => {
             );
         });
         
-        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
         return updatedUser;
     });
   };
@@ -471,7 +514,7 @@ const App: React.FC = () => {
             onAddComment={handleAddComment}
             onToggleLike={handleToggleLike}
             onSharePost={handleSharePost}
-        />
+        />;
        case 'settings':
          if (!currentUser) return <AuthPage onLogin={handleLogin} onRegister={handleRegister} />;
          return <SettingsPage
