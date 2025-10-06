@@ -77,14 +77,42 @@ function getInitialState() {
     console.error("Failed to process currentUserId from localStorage", e);
     currentUser = null;
   }
+  
+  // 4. Get messages from storage
+  let messages: Message[];
+  try {
+      const savedMessages = localStorage.getItem('messages');
+      messages = savedMessages ? JSON.parse(savedMessages) : initialMessages;
+  } catch (e) {
+      console.error("Failed to parse messages from localStorage", e);
+      messages = initialMessages;
+  }
 
-  // 4. Initialize other data that depends on the initial user list.
-  const notifications = initialNotifications(users);
+  // 5. Get notifications and re-hydrate them
+  let notifications: Notification[];
+  try {
+      const savedNotifications = localStorage.getItem('notifications');
+       if (savedNotifications) {
+            const parsedNotifications = JSON.parse(savedNotifications) as Notification[];
+            notifications = parsedNotifications.map(notif => ({
+                ...notif,
+                actor: usersMap.get(notif.actor.id) || notif.actor,
+            }));
+       } else {
+           notifications = initialNotifications(users);
+       }
+  } catch (e) {
+       console.error("Failed to parse notifications from localStorage", e);
+       notifications = initialNotifications(users);
+  }
+
+  // 6. Initialize other dynamic data.
   const advertisements = initialAdvertisements(users);
   const stories = initialStories(users).filter(s => s.timestamp > Date.now() - 24 * 60 * 60 * 1000);
 
-  return { users, posts, currentUser, notifications, advertisements, stories };
+  return { users, posts, currentUser, messages, notifications, advertisements, stories };
 }
+
 
 // Run it once when the module loads.
 const initialState = getInitialState();
@@ -94,7 +122,7 @@ const App: React.FC = () => {
   
   const [users, setUsers] = useState<User[]>(initialState.users);
   const [posts, setPosts] = useState<Post[]>(initialState.posts);
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [messages, setMessages] = useState<Message[]>(initialState.messages);
   const [notifications, setNotifications] = useState<Notification[]>(initialState.notifications);
   const [groups, setGroups] = useState<Group[]>(initialGroups);
   const [advertisements, setAdvertisements] = useState<Advertisement[]>(initialState.advertisements);
@@ -112,17 +140,23 @@ const App: React.FC = () => {
 
   const usersMap = useMemo(() => new Map(users.map(u => [u.id, u])), [users]);
   
-  // Persist users to localStorage whenever the state changes
+  // --- STATE PERSISTENCE ---
   useEffect(() => {
     localStorage.setItem('users', JSON.stringify(users));
   }, [users]);
   
-  // Persist posts to localStorage whenever the state changes
   useEffect(() => {
     localStorage.setItem('posts', JSON.stringify(posts));
   }, [posts]);
+  
+  useEffect(() => {
+    localStorage.setItem('messages', JSON.stringify(messages));
+  }, [messages]);
 
-  // Persist current user's ID to localStorage whenever the state changes for session management
+  useEffect(() => {
+    localStorage.setItem('notifications', JSON.stringify(notifications));
+  }, [notifications]);
+
   useEffect(() => {
     if (currentUser) {
       localStorage.setItem('currentUserId', currentUser.id);
@@ -134,7 +168,7 @@ const App: React.FC = () => {
   // Sync state across tabs
   useEffect(() => {
     const syncTabs = (event: StorageEvent) => {
-        if (event.key === 'users' || event.key === 'posts' || event.key === 'currentUserId') {
+        if (['users', 'posts', 'messages', 'notifications', 'currentUserId'].includes(event.key || '')) {
             console.log('Reloading tab to sync storage changes.');
             window.location.reload();
         }
@@ -411,6 +445,20 @@ const App: React.FC = () => {
         read: false,
     };
     setMessages(prev => [...prev, newMessage]);
+    
+    // Create a notification for the recipient.
+    // In this mock setup, it appears for the current user, but demonstrates the logic.
+    // A real app would handle this via a backend + push notifications.
+    const newNotification: Notification = {
+        id: `notif-${Date.now()}`,
+        type: 'message',
+        actor: currentUser,
+        message: `te ha enviado un mensaje.`,
+        read: false,
+        timestamp: Date.now(),
+    };
+    // This adds the notification to the global list. When the other user logs in, they would see it.
+    setNotifications(prev => [newNotification, ...prev]);
   };
   
   const handleMarkMessagesAsRead = (conversationId: string) => {
@@ -507,9 +555,6 @@ const App: React.FC = () => {
     switch (activeView) {
       case 'profile':
         if (viewData?.user) {
-          // FIX: If viewing the current user's profile, pass the up-to-date `currentUser` object
-          // from state instead of the potentially stale `viewData.user`. This prevents rendering
-          // issues after profile updates.
           const profileUser = currentUser?.id === viewData.user.id ? currentUser : viewData.user;
           const userPosts = posts.filter(p => p.author.id === profileUser.id);
           return <ProfilePage 

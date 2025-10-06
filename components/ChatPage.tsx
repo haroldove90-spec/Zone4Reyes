@@ -150,10 +150,10 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, users, messages
     };
 
     return (
-        <div className="flex h-[calc(100vh-100px)] bg-content-bg rounded-lg shadow-sm overflow-hidden">
-            {/* Conversations List */}
-            <div className="w-1/3 border-r border-divider flex flex-col">
-                <div className="p-4 border-b border-divider">
+        <div className="flex h-[calc(100vh_-_12rem)] md:h-[calc(100vh_-_8rem)] bg-content-bg rounded-lg shadow-sm overflow-hidden">
+            {/* Conversations List (Hidden on mobile for now, can be a separate view) */}
+            <div className="hidden md:flex w-1/3 border-r border-divider flex-col">
+                <div className="p-4 border-b border-divider flex-shrink-0">
                     <h2 className="text-xl font-bold text-text-primary">Mensajes</h2>
                 </div>
                 <div className="flex-1 overflow-y-auto">
@@ -175,10 +175,10 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, users, messages
             </div>
 
             {/* Chat Window */}
-            <div className="w-2/3 flex flex-col">
+            <div className="w-full md:w-2/3 flex flex-col">
                 {otherUser ? (
                     <>
-                        <div className="p-3 border-b border-divider flex items-center space-x-3">
+                        <div className="p-3 border-b border-divider flex items-center space-x-3 flex-shrink-0">
                             <img src={otherUser.avatarUrl} alt={otherUser.name} className="w-10 h-10 rounded-full" />
                             <div>
                                 <button onClick={() => onViewProfile(otherUser)} className="font-bold text-text-primary hover:underline">{otherUser.name}</button>
@@ -193,7 +193,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, users, messages
                             <div ref={messagesEndRef} />
                         </div>
 
-                        <div className="p-4 border-t border-divider">
+                        <div className="p-4 border-t border-divider flex-shrink-0">
                             <form onSubmit={handleSendMessage} className="flex items-center space-x-3">
                                 <input
                                     type="text"
@@ -209,8 +209,8 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, users, messages
                         </div>
                     </>
                 ) : (
-                    <div className="flex-1 flex items-center justify-center text-text-secondary">
-                        <p>Selecciona una conversación para empezar a chatear.</p>
+                    <div className="flex-1 flex items-center justify-center text-text-secondary p-4 text-center">
+                        <p>Selecciona una conversación para empezar a chatear o inicia una nueva desde el perfil de un usuario.</p>
                     </div>
                 )}
             </div>
