@@ -30,6 +30,20 @@ type ViewData = {
   targetUser?: User;
 }
 
+// Helper to safely parse JSON from localStorage, isolating failures.
+// FIX: Added a trailing comma inside the generic <T,> to prevent the TSX parser from misinterpreting it as a JSX tag. This resolves a large number of cascading parse errors.
+const safeJSONParse = <T,>(key: string, fallback: T): T => {
+    const item = localStorage.getItem(key);
+    if (!item) return fallback;
+    try {
+        return JSON.parse(item) as T;
+    } catch (e) {
+        console.error(`CRITICAL: Failed to parse '${key}' from localStorage. Data may be corrupt. Resetting '${key}' to its default.`, e);
+        localStorage.removeItem(key); // Clear the corrupted item to prevent future errors.
+        return fallback;
+    }
+};
+
 /**
  * ATTENTION: CRITICAL FIX IMPLEMENTED
  * This function has been completely rewritten to definitively solve the user and
@@ -51,20 +65,6 @@ type ViewData = {
  *     and `sessionStorage` (for temporary sessions) to restore the user's logged-in state.
  */
 function getInitialState() {
-  // Helper to safely parse JSON from localStorage, isolating failures.
-  // FIX: Added a trailing comma inside the generic <T,> to prevent the TSX parser from misinterpreting it as a JSX tag. This resolves a large number of cascading parse errors.
-  const safeJSONParse = <T,>(key: string, fallback: T): T => {
-    const item = localStorage.getItem(key);
-    if (!item) return fallback;
-    try {
-      return JSON.parse(item) as T;
-    } catch (e) {
-      console.error(`CRITICAL: Failed to parse '${key}' from localStorage. Data may be corrupt. Resetting '${key}' to its default.`, e);
-      localStorage.removeItem(key); // Clear the corrupted item to prevent future errors.
-      return fallback;
-    }
-  };
-
   // 1. Load users with robust parsing. This is the most critical part.
   const users: User[] = safeJSONParse('users', initialUsers);
   const usersMap = new Map(users.map(u => [u.id, u]));
@@ -150,21 +150,24 @@ export const App: React.FC = () => {
   const usersMap = useMemo(() => new Map(users.map(u => [u.id, u])), [users]);
   
   // --- STATE PERSISTENCE ---
-  useEffect(() => {
-    localStorage.setItem('users', JSON.stringify(users));
-  }, [users]);
-  
-  useEffect(() => {
-    localStorage.setItem('posts', JSON.stringify(posts));
-  }, [posts]);
-  
-  useEffect(() => {
-    localStorage.setItem('messages', JSON.stringify(messages));
-  }, [messages]);
-
-  useEffect(() => {
-    localStorage.setItem('notifications', JSON.stringify(notifications));
-  }, [notifications]);
+  const saveDataToStorage = useCallback((newState: { users?: User[], posts?: Post[], messages?: Message[], notifications?: AppNotification[] }) => {
+    try {
+        if (newState.users) {
+            localStorage.setItem('users', JSON.stringify(newState.users));
+        }
+        if (newState.posts) {
+            localStorage.setItem('posts', JSON.stringify(newState.posts));
+        }
+        if (newState.messages) {
+            localStorage.setItem('messages', JSON.stringify(newState.messages));
+        }
+        if (newState.notifications) {
+            localStorage.setItem('notifications', JSON.stringify(newState.notifications));
+        }
+    } catch (e) {
+        console.error("CRITICAL: Failed to save app state to localStorage.", e);
+    }
+  }, []);
 
   // Sync state across tabs
   useEffect(() => {
@@ -193,9 +196,11 @@ export const App: React.FC = () => {
   // Notifications
   const handleMarkNotificationsAsRead = useCallback(() => {
     setTimeout(() => {
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      const newNotifications = notifications.map(n => ({ ...n, read: true }));
+      setNotifications(newNotifications);
+      saveDataToStorage({ notifications: newNotifications });
     }, 500);
-  }, []);
+  }, [notifications, saveDataToStorage]);
 
   // Navigation
   const handleNavigate = useCallback((view: View, data?: any) => {
@@ -249,8 +254,12 @@ export const App: React.FC = () => {
             general: { language: 'es' },
           }
       };
-      setUsers(prevUsers => [...prevUsers, newUser]);
+      const newUsers = [...users, newUser];
+      setUsers(newUsers);
       setCurrentUser(newUser);
+      
+      // Explicitly save state
+      saveDataToStorage({ users: newUsers });
       // By default, new registrations are persistent sessions
       localStorage.setItem('currentUserId', newUser.id);
       handleNavigate('feed');
@@ -276,18 +285,23 @@ export const App: React.FC = () => {
       comments: [],
       shares: 0,
     };
-    setPosts(prev => [newPost, ...prev]);
+    const newPosts = [newPost, ...posts];
+    setPosts(newPosts);
+    saveDataToStorage({ posts: newPosts });
   };
   
   // Post Interactions
   const handleToggleLike = (postId: string) => {
-    setPosts(prevPosts => prevPosts.map(p => {
+    const newPosts = posts.map(p => {
       if (p.id === postId) {
         const isLiked = likedPosts.has(postId);
         return { ...p, likes: p.likes + (isLiked ? -1 : 1) };
       }
       return p;
-    }));
+    });
+    setPosts(newPosts);
+    saveDataToStorage({ posts: newPosts });
+
     setLikedPosts(prev => {
       const newSet = new Set(prev);
       if (newSet.has(postId)) {
@@ -307,15 +321,19 @@ export const App: React.FC = () => {
       content: commentContent,
       timestamp: 'Ahora mismo',
     };
-    setPosts(prevPosts => prevPosts.map(p => 
+    const newPosts = posts.map(p => 
       p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p
-    ));
+    );
+    setPosts(newPosts);
+    saveDataToStorage({ posts: newPosts });
   };
   
   const handleSharePost = (postId: string) => {
-    setPosts(prevPosts => prevPosts.map(p => 
+     const newPosts = posts.map(p => 
       p.id === postId ? { ...p, shares: p.shares + 1 } : p
-    ));
+    );
+    setPosts(newPosts);
+    saveDataToStorage({ posts: newPosts });
   };
   
   // Profile & Settings
@@ -324,23 +342,29 @@ export const App: React.FC = () => {
 
     const updatedUser = { ...currentUser, ...updatedData };
 
-    setCurrentUser(updatedUser);
-
-    setUsers(prevUsers => prevUsers.map(u => (u.id === updatedUser.id ? updatedUser : u)));
-
-    // Propagate the user update to other parts of the state to avoid stale data
-    setPosts(prevPosts =>
-      prevPosts.map(post => {
+    // Calculate all new states based on the single user update
+    const newUsers = users.map(u => (u.id === updatedUser.id ? updatedUser : u));
+    const newPosts = posts.map(post => {
         const newPost = post.author.id === updatedUser.id ? { ...post, author: updatedUser } : post;
         const newComments = newPost.comments.map(comment =>
           comment.author.id === updatedUser.id ? { ...comment, author: updatedUser } : comment
         );
         return { ...newPost, comments: newComments };
-      })
-    );
-    setStories(prevStories => prevStories.map(story => (story.author.id === updatedUser.id ? { ...story, author: updatedUser } : story)));
-    setAdvertisements(prevAds => prevAds.map(ad => (ad.author.id === updatedUser.id ? { ...ad, author: updatedUser } : ad)));
-    setNotifications(prevNotifs => prevNotifs.map(notif => (notif.actor.id === updatedUser.id ? { ...notif, actor: updatedUser } : notif)));
+    });
+    const newStories = stories.map(story => (story.author.id === updatedUser.id ? { ...story, author: updatedUser } : story));
+    const newAds = advertisements.map(ad => (ad.author.id === updatedUser.id ? { ...ad, author: updatedUser } : ad));
+    const newNotifs = notifications.map(notif => (notif.actor.id === updatedUser.id ? { ...notif, actor: updatedUser } : notif));
+    
+    // Set all states
+    setCurrentUser(updatedUser);
+    setUsers(newUsers);
+    setPosts(newPosts);
+    setStories(newStories);
+    setAdvertisements(newAds);
+    setNotifications(newNotifs);
+
+    // Save all updated persistent states
+    saveDataToStorage({ users: newUsers, posts: newPosts, notifications: newNotifs });
   };
 
   const handleUpdateUserSettings = (updatedSettings: Partial<UserSettings>) => {
@@ -367,7 +391,9 @@ export const App: React.FC = () => {
   
   const handleDeleteAccount = () => {
     if (!currentUser) return;
-    setUsers(prev => prev.filter(u => u.id !== currentUser.id));
+    const newUsers = users.filter(u => u.id !== currentUser.id);
+    setUsers(newUsers);
+    saveDataToStorage({ users: newUsers });
     handleLogout();
   };
 
@@ -380,55 +406,57 @@ export const App: React.FC = () => {
     const friendUser = users.find(u => u.id === friendId);
     if (!friendUser) return;
 
-    setCurrentUser(prevCurrentUser => {
-      if (!prevCurrentUser) return null;
-      
-      const newFriendIds = [...(prevCurrentUser.friendIds || []), friendId];
-      const updatedUser = { ...prevCurrentUser, friendIds: newFriendIds };
-      
-      setUsers(prevUsers => {
-          const usersWithUpdatedSelf = prevUsers.map(u => 
-              u.id === updatedUser.id ? updatedUser : u
-          );
-          return usersWithUpdatedSelf.map(u => 
-              u.id === friendId ? { ...u, friendIds: [...(u.friendIds || []), updatedUser.id] } : u
-          );
-      });
-      
-      // Create notification for current user, actor is the new friend
-      // FIX: Renamed Notification to AppNotification to avoid conflict with DOM type
-      const newNotification: AppNotification = {
-          id: `notif-${Date.now()}`,
-          type: 'friend_request',
-          actor: friendUser,
-          message: 'ahora es tu amigo.',
-          read: false,
-          timestamp: Date.now(),
-      };
-      setNotifications(prev => [newNotification, ...prev]);
+    // Calculate new state for current user
+    const newFriendIds = [...(currentUser.friendIds || []), friendId];
+    const updatedCurrentUser = { ...currentUser, friendIds: newFriendIds };
 
-      return updatedUser;
+    // Calculate new state for the whole users array
+    const newUsers = users.map(u => {
+        if (u.id === updatedCurrentUser.id) return updatedCurrentUser;
+        if (u.id === friendId) return { ...u, friendIds: [...(u.friendIds || []), updatedCurrentUser.id] };
+        return u;
     });
+
+    // Create notification
+    const newNotification: AppNotification = {
+        id: `notif-${Date.now()}`,
+        type: 'friend_request',
+        actor: friendUser,
+        message: 'ahora es tu amigo.',
+        read: false,
+        timestamp: Date.now(),
+    };
+    const newNotifications = [newNotification, ...notifications];
+
+    // Update state
+    setCurrentUser(updatedCurrentUser);
+    setUsers(newUsers);
+    setNotifications(newNotifications);
+
+    // Persist
+    saveDataToStorage({ users: newUsers, notifications: newNotifications });
   };
 
   const handleRemoveFriend = (friendId: string) => {
-      setCurrentUser(prevCurrentUser => {
-        if (!prevCurrentUser) return null;
-        
-        const newFriendIds = (prevCurrentUser.friendIds || []).filter(id => id !== friendId);
-        const updatedUser = { ...prevCurrentUser, friendIds: newFriendIds };
+    if (!currentUser) return;
 
-        setUsers(prevUsers => {
-            const usersWithUpdatedSelf = prevUsers.map(u => 
-                u.id === updatedUser.id ? updatedUser : u
-            );
-            return usersWithUpdatedSelf.map(u => 
-                u.id === friendId ? { ...u, friendIds: (u.friendIds || []).filter(id => id !== updatedUser.id) } : u
-            );
-        });
-        
-        return updatedUser;
+    // Calculate new state for current user
+    const newFriendIds = (currentUser.friendIds || []).filter(id => id !== friendId);
+    const updatedCurrentUser = { ...currentUser, friendIds: newFriendIds };
+
+    // Calculate new state for the whole users array
+    const newUsers = users.map(u => {
+        if (u.id === updatedCurrentUser.id) return updatedCurrentUser;
+        if (u.id === friendId) return { ...u, friendIds: (u.friendIds || []).filter(id => id !== updatedCurrentUser.id) };
+        return u;
     });
+
+    // Update state
+    setCurrentUser(updatedCurrentUser);
+    setUsers(newUsers);
+
+    // Persist
+    saveDataToStorage({ users: newUsers });
   };
   
   const handleBlockUser = (userIdToBlock: string) => {
@@ -456,12 +484,10 @@ export const App: React.FC = () => {
         timestamp: Date.now(),
         read: false,
     };
-    setMessages(prev => [...prev, newMessage]);
+    const newMessages = [...messages, newMessage];
+    setMessages(newMessages);
     
     // Create a notification for the recipient.
-    // In this mock setup, it appears for the current user, but demonstrates the logic.
-    // A real app would handle this via a backend + push notifications.
-    // FIX: Renamed Notification to AppNotification to avoid conflict with DOM type
     const newNotification: AppNotification = {
         id: `notif-${Date.now()}`,
         type: 'message',
@@ -470,20 +496,25 @@ export const App: React.FC = () => {
         read: false,
         timestamp: Date.now(),
     };
-    // This adds the notification to the global list. When the other user logs in, they would see it.
-    setNotifications(prev => [newNotification, ...prev]);
+    const newNotifications = [newNotification, ...notifications];
+    setNotifications(newNotifications);
+    
+    // Persist
+    saveDataToStorage({ messages: newMessages, notifications: newNotifications });
   };
   
   const handleMarkMessagesAsRead = (conversationId: string) => {
      if(!currentUser) return;
-     setMessages(prev => prev.map(m => {
+     const newMessages = messages.map(m => {
         const otherUserId = m.senderId === currentUser.id ? m.receiverId : m.senderId;
         const currentConvoId = [currentUser.id, otherUserId].sort().join('-');
         if (currentConvoId === conversationId && m.receiverId === currentUser.id) {
             return { ...m, read: true };
         }
         return m;
-     }));
+     });
+     setMessages(newMessages);
+     saveDataToStorage({ messages: newMessages });
   };
   
   const onChatStarted = () => {
