@@ -42,6 +42,7 @@ export interface User {
   settings: UserSettings;
   blockedUserIds?: string[];
   isActive: boolean;
+  isVerified: boolean;
 }
 
 export interface Comment {

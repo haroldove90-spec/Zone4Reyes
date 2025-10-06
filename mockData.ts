@@ -53,6 +53,7 @@ export const initialUsers: User[] = [
     },
     blockedUserIds: [],
     isActive: true,
+    isVerified: true,
   },
   {
     id: 'user-1',
@@ -71,6 +72,7 @@ export const initialUsers: User[] = [
     },
     blockedUserIds: [],
     isActive: true,
+    isVerified: true,
   },
   {
     id: 'user-2',
@@ -83,9 +85,13 @@ export const initialUsers: User[] = [
     info: { work: 'Administrador de la página', location: 'Los Reyes Iztacala' },
     friendIds: ['user-current'],
     photos: ['https://picsum.photos/id/1060/600/400'],
-    settings: defaultSettings,
+    settings: {
+        ...defaultSettings,
+        account: { email: 'negocios.reyes@example.com' }
+    },
     blockedUserIds: [],
     isActive: true,
+    isVerified: true,
   },
   {
     id: 'user-3',
@@ -98,9 +104,13 @@ export const initialUsers: User[] = [
     info: { work: 'Ingeniero en Sistemas', education: 'Estudió en IPN', location: 'Vive en Los Reyes Iztacala' },
     friendIds: ['user-current', 'user-1'],
     photos: ['https://picsum.photos/id/146/600/400', 'https://picsum.photos/id/147/600/400'],
-    settings: defaultSettings,
+    settings: {
+        ...defaultSettings,
+        account: { email: 'carlos.mendoza@example.com' }
+    },
     blockedUserIds: [],
     isActive: true,
+    isVerified: true,
   },
   {
     id: 'user-4',
@@ -113,9 +123,13 @@ export const initialUsers: User[] = [
     info: { work: 'Mecánico automotriz', location: 'Vive en Los Reyes Iztacala' },
     friendIds: ['user-current'],
     photos: ['https://picsum.photos/id/1011/600/400'],
-    settings: defaultSettings,
+    settings: {
+        ...defaultSettings,
+        account: { email: 'haroldo.reyes@example.com' }
+    },
     blockedUserIds: [],
     isActive: true,
+    isVerified: true,
   }
 ];
 

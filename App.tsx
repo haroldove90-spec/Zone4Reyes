@@ -212,14 +212,16 @@ export const App: React.FC = () => {
   }, [handleMarkNotificationsAsRead]);
 
   // Auth
-  const handleLogin = async (name: string, password: string, rememberMe: boolean): Promise<void> => {
-    const user = users.find(u => u.name === name && u.password === password);
+  const handleLogin = async (email: string, password: string, rememberMe: boolean): Promise<void> => {
+    const user = users.find(u => u.settings.account.email?.toLowerCase() === email.toLowerCase() && u.password === password);
     if (user) {
       if (!user.isActive) {
         throw new Error('Esta cuenta ha sido desactivada.');
       }
+      if (!user.isVerified) {
+        throw new Error('Por favor, confirma tu correo electrónico antes de iniciar sesión.');
+      }
       setCurrentUser(user);
-      // Persist session based on "Remember Me" choice
       if (rememberMe) {
           localStorage.setItem('currentUserId', user.id);
       } else {
@@ -227,12 +229,15 @@ export const App: React.FC = () => {
       }
       handleNavigate('feed');
     } else {
-      throw new Error('Nombre de usuario o contraseña incorrectos.');
+      throw new Error('Correo electrónico o contraseña incorrectos.');
     }
   };
   
-  const handleRegister = async (name: string, password: string): Promise<void> => {
-      if (users.some(u => u.name.toLowerCase() === name.toLowerCase())) {
+  const handleRegister = async (name: string, email: string, password: string): Promise<User> => {
+      if (users.some(u => u.settings.account.email?.toLowerCase() === email.toLowerCase())) {
+          throw new Error('El correo electrónico ya está en uso.');
+      }
+       if (users.some(u => u.name.toLowerCase() === name.toLowerCase())) {
           throw new Error('El nombre de usuario ya existe.');
       }
       const newUser: User = {
@@ -245,9 +250,10 @@ export const App: React.FC = () => {
           friendIds: [],
           photos: [],
           isActive: true,
+          isVerified: false, // New accounts need verification
           blockedUserIds: [],
           settings: {
-            account: { email: '' },
+            account: { email },
             privacy: { postVisibility: 'public', profileVisibility: 'public', messagePrivacy: 'public', searchPrivacy: 'public' },
             notifications: { likes: true, comments: true, mentions: true, messages: true, groupUpdates: true },
             general: { language: 'es' },
@@ -255,14 +261,49 @@ export const App: React.FC = () => {
       };
       const newUsers = [...users, newUser];
       setUsers(newUsers);
-      setCurrentUser(newUser);
-      
-      // Explicitly save state
       saveDataToStorage({ users: newUsers });
-      // By default, new registrations are persistent sessions
-      localStorage.setItem('currentUserId', newUser.id);
-      handleNavigate('feed');
+      return newUser;
   };
+
+  const handleVerifyEmail = async (userId: string): Promise<void> => {
+      const newUsers = users.map(u => u.id === userId ? { ...u, isVerified: true } : u);
+      const userToLogin = newUsers.find(u => u.id === userId);
+      
+      if (userToLogin) {
+          setUsers(newUsers);
+          saveDataToStorage({ users: newUsers });
+          setCurrentUser(userToLogin);
+          localStorage.setItem('currentUserId', userToLogin.id);
+          handleNavigate('feed');
+      } else {
+          throw new Error('No se pudo verificar el usuario.');
+      }
+  };
+
+  const handleForgotPasswordRequest = async (email: string): Promise<User | null> => {
+    const user = users.find(u => u.settings.account.email?.toLowerCase() === email.toLowerCase());
+    if (user) {
+        console.log(`SIMULATION: Password reset link sent for user ${user.id}`);
+        return user;
+    }
+    return null;
+  };
+  
+  const handleResetPassword = async (userId: string, newPassword: string): Promise<void> => {
+      const newUsers = users.map(u => u.id === userId ? { ...u, password: newPassword } : u);
+      const userToLogin = newUsers.find(u => u.id === userId);
+
+      if (userToLogin) {
+          setUsers(newUsers);
+          saveDataToStorage({ users: newUsers });
+          setCurrentUser(userToLogin);
+          localStorage.setItem('currentUserId', userToLogin.id);
+          handleNavigate('feed');
+      } else {
+          throw new Error('No se pudo restablecer la contraseña.');
+      }
+  };
+
 
   const handleLogout = () => {
     setCurrentUser(null);
@@ -622,11 +663,25 @@ export const App: React.FC = () => {
         }
         return <Feed {...feedProps} />;
       case 'auth':
-        return <AuthPage onLogin={handleLogin} onRegister={handleRegister} />;
+        return <AuthPage 
+            users={users}
+            onLogin={handleLogin} 
+            onRegister={handleRegister} 
+            onVerifyEmail={handleVerifyEmail}
+            onForgotPasswordRequest={handleForgotPasswordRequest}
+            onResetPassword={handleResetPassword}
+        />;
       case 'notifications':
         return <NotificationsPage notifications={notifications} onNavigate={(view, user) => handleNavigate(view as View, { user })} />;
       case 'chat':
-        if (!currentUser) return <AuthPage onLogin={handleLogin} onRegister={handleRegister} />;
+        if (!currentUser) return <AuthPage 
+            users={users}
+            onLogin={handleLogin} 
+            onRegister={handleRegister} 
+            onVerifyEmail={handleVerifyEmail}
+            onForgotPasswordRequest={handleForgotPasswordRequest}
+            onResetPassword={handleResetPassword}
+        />;
         return <ChatPage 
             currentUser={currentUser}
             users={users}
@@ -638,10 +693,24 @@ export const App: React.FC = () => {
             onChatStarted={onChatStarted}
         />;
       case 'groups':
-         if (!currentUser) return <AuthPage onLogin={handleLogin} onRegister={handleRegister} />;
+         if (!currentUser) return <AuthPage 
+            users={users}
+            onLogin={handleLogin} 
+            onRegister={handleRegister} 
+            onVerifyEmail={handleVerifyEmail}
+            onForgotPasswordRequest={handleForgotPasswordRequest}
+            onResetPassword={handleResetPassword}
+        />;
          return <GroupsPage currentUser={currentUser} groups={groups} onCreateGroup={handleCreateGroup} onJoinGroup={handleJoinGroup} usersMap={usersMap} />;
       case 'advertise':
-         if (!currentUser) return <AuthPage onLogin={handleLogin} onRegister={handleRegister} />;
+         if (!currentUser) return <AuthPage 
+            users={users}
+            onLogin={handleLogin} 
+            onRegister={handleRegister} 
+            onVerifyEmail={handleVerifyEmail}
+            onForgotPasswordRequest={handleForgotPasswordRequest}
+            onResetPassword={handleResetPassword}
+        />;
          return <AdvertisePage currentUser={currentUser} advertisements={advertisements} onCreateAdvertisement={handleCreateAdvertisement} />;
       case 'search':
         return <SearchPage 
@@ -658,7 +727,14 @@ export const App: React.FC = () => {
             onSharePost={handleSharePost}
         />;
        case 'settings':
-         if (!currentUser) return <AuthPage onLogin={handleLogin} onRegister={handleRegister} />;
+         if (!currentUser) return <AuthPage 
+            users={users}
+            onLogin={handleLogin} 
+            onRegister={handleRegister} 
+            onVerifyEmail={handleVerifyEmail}
+            onForgotPasswordRequest={handleForgotPasswordRequest}
+            onResetPassword={handleResetPassword}
+        />;
          return <SettingsPage
             currentUser={currentUser}
             users={users}
