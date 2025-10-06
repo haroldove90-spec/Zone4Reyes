@@ -1,9 +1,12 @@
+
 import React from 'react';
-import { Notification, User, Group } from '../types';
+// FIX: Renamed Notification to AppNotification to avoid conflict with DOM type
+import { AppNotification, User, Group } from '../types';
 import { Icon } from './Icon';
 
 interface NotificationsPageProps {
-  notifications: Notification[];
+  // FIX: Renamed Notification to AppNotification
+  notifications: AppNotification[];
   onNavigate: (view: 'profile', user: User) => void;
 }
 
@@ -22,7 +25,8 @@ const timeAgo = (timestamp: number) => {
     return "Ahora mismo";
 };
 
-const NotificationIcon: React.FC<{type: Notification['type']}> = ({type}) => {
+// FIX: Renamed Notification to AppNotification
+const NotificationIcon: React.FC<{type: AppNotification['type']}> = ({type}) => {
     const icons = {
         like: { path: "M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.085a2 2 0 00-1.736.97l-1.9 3.8a2 2 0 00.23 2.16l3.333 4.444M7 20h-2a2 2 0 01-2-2v-6a2 2 0 012-2h2.5", color: 'text-blue-500', bg: 'bg-blue-100 dark:bg-blue-900/50' },
         comment: { path: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z", color: 'text-green-500', bg: 'bg-green-100 dark:bg-green-900/50' },

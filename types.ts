@@ -82,7 +82,8 @@ export interface Conversation {
 
 export type NotificationType = 'like' | 'comment' | 'share' | 'mention' | 'message' | 'group_join_request' | 'friend_request';
 
-export interface Notification {
+// FIX: Renamed Notification to AppNotification to avoid naming conflicts with the browser's built-in Notification API.
+export interface AppNotification {
   id:string;
   type: NotificationType;
   actor: User;

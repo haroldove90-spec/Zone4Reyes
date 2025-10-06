@@ -1,4 +1,5 @@
-import { User, Post, Message, Notification, Group, Advertisement, Story, UserSettings } from './types';
+// FIX: Renamed Notification to AppNotification to avoid conflict with DOM type
+import { User, Post, Message, AppNotification, Group, Advertisement, Story, UserSettings } from './types';
 
 const defaultSettings: UserSettings = {
   account: {
@@ -180,7 +181,8 @@ export const initialMessages: Message[] = [
     { id: 'msg3', senderId: 'user-3', receiverId: 'user-current', content: 'Oye, gracias por el dato de la tortillería el otro día. ¡Me salvaste!', timestamp: Date.now() - 1000 * 60 * 60 * 24, read: true },
 ];
 
-export const initialNotifications = (users: User[]): Notification[] => {
+// FIX: Renamed Notification to AppNotification to avoid conflict with DOM type
+export const initialNotifications = (users: User[]): AppNotification[] => {
     const userMap = new Map(users.map(u => [u.id, u]));
     const user1 = userMap.get('user-1') || users[1];
     const user3 = userMap.get('user-3') || users[3];
