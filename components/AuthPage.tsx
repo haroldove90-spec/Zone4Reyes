@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
 
 interface AuthPageProps {
-  onLogin: (name: string, password: string) => Promise<void>;
+  onLogin: (name: string, password: string, rememberMe: boolean) => Promise<void>;
   onRegister: (name: string, password: string) => Promise<void>;
 }
 
@@ -9,6 +10,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onRegister }) => {
   const [isLoginView, setIsLoginView] = useState(true);
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -20,7 +22,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onRegister }) => {
 
     try {
       if (isLoginView) {
-        await onLogin(name, password);
+        await onLogin(name, password, rememberMe);
       } else {
         await onRegister(name, password);
       }
@@ -67,7 +69,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onRegister }) => {
                                 placeholder="Ej. Carlos Mendoza"
                             />
                         </div>
-                        <div className="mb-6">
+                        <div className="mb-4">
                             <label className="block text-text-secondary text-sm font-bold mb-2" htmlFor="password">
                                 Contraseña
                             </label>
@@ -100,6 +102,21 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onRegister }) => {
                                 </button>
                             </div>
                         </div>
+
+                        {isLoginView && (
+                            <div className="mb-6">
+                                <label htmlFor="rememberMe" className="flex items-center cursor-pointer">
+                                    <input
+                                        id="rememberMe"
+                                        type="checkbox"
+                                        checked={rememberMe}
+                                        onChange={(e) => setRememberMe(e.target.checked)}
+                                        className="h-4 w-4 rounded border-divider text-primary focus:ring-primary"
+                                    />
+                                    <span className="ml-2 text-sm text-text-secondary">Recordarme</span>
+                                </label>
+                            </div>
+                        )}
 
                         {error && (
                             <p className="bg-red-500/10 text-red-500 text-sm p-3 rounded-lg mb-4">{error}</p>

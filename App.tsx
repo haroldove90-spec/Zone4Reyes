@@ -47,6 +47,8 @@ type ViewData = {
  *     checks for the existence of the `password` field on the loaded user object. If
  *     the user data is somehow incomplete, the session is safely invalidated. This
  *     directly addresses the "forgotten keys/credentials" issue.
+ * 4.  **Flexible Session Storage**: It now checks both `localStorage` (for "Remember Me" sessions)
+ *     and `sessionStorage` (for temporary sessions) to restore the user's logged-in state.
  */
 function getInitialState() {
   // Helper to safely parse JSON from localStorage, isolating failures.
@@ -91,20 +93,22 @@ function getInitialState() {
       }))
     : initialNotifications(users);
 
-  // 4. Get current user ID and find the full user object from the clean user list.
+  // 4. Get current user ID from persistent or session storage and find the full user object.
   let currentUser: User | null = null;
-  const savedUserId = localStorage.getItem('currentUserId');
+  const persistentUserId = localStorage.getItem('currentUserId');
+  const sessionUserId = sessionStorage.getItem('currentUserId');
+  const savedUserId = persistentUserId || sessionUserId; // Prioritize persistent session
+
   if (savedUserId) {
     const foundUser = users.find(u => u.id === savedUserId);
     if (foundUser && foundUser.isActive) {
       // CRITICAL CHECK: Ensure the loaded user data includes credentials.
-      // If the password field is missing, the user object is considered corrupt
-      // for authentication purposes, and the session must be invalidated.
       if (foundUser.password) {
         currentUser = foundUser;
       } else {
         console.warn(`User ${foundUser.id} was found, but their data is incomplete (missing password). Invalidating session for security.`);
         localStorage.removeItem('currentUserId');
+        sessionStorage.removeItem('currentUserId');
       }
     }
   }
@@ -162,14 +166,6 @@ export const App: React.FC = () => {
     localStorage.setItem('notifications', JSON.stringify(notifications));
   }, [notifications]);
 
-  useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem('currentUserId', currentUser.id);
-    } else {
-      localStorage.removeItem('currentUserId');
-    }
-  }, [currentUser]);
-
   // Sync state across tabs
   useEffect(() => {
     const syncTabs = (event: StorageEvent) => {
@@ -212,13 +208,19 @@ export const App: React.FC = () => {
   }, [handleMarkNotificationsAsRead]);
 
   // Auth
-  const handleLogin = async (name: string, password: string): Promise<void> => {
+  const handleLogin = async (name: string, password: string, rememberMe: boolean): Promise<void> => {
     const user = users.find(u => u.name === name && u.password === password);
     if (user) {
       if (!user.isActive) {
         throw new Error('Esta cuenta ha sido desactivada.');
       }
       setCurrentUser(user);
+      // Persist session based on "Remember Me" choice
+      if (rememberMe) {
+          localStorage.setItem('currentUserId', user.id);
+      } else {
+          sessionStorage.setItem('currentUserId', user.id);
+      }
       handleNavigate('feed');
     } else {
       throw new Error('Nombre de usuario o contraseña incorrectos.');
@@ -249,11 +251,15 @@ export const App: React.FC = () => {
       };
       setUsers(prevUsers => [...prevUsers, newUser]);
       setCurrentUser(newUser);
+      // By default, new registrations are persistent sessions
+      localStorage.setItem('currentUserId', newUser.id);
       handleNavigate('feed');
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
+    localStorage.removeItem('currentUserId');
+    sessionStorage.removeItem('currentUserId');
     handleNavigate('feed');
   };
 
