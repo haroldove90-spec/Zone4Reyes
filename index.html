@@ -2,22 +2,20 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="https://appdesignmex.com/netbandera/wp-content/uploads/2025/10/Zone4Reyes-03-1.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Zone4Reyes</title>
     
     <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json" />
+    <link rel="manifest" href="./manifest.json" />
     <meta name="theme-color" content="#1B74E4" />
 
     <!-- iOS PWA Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Zone4Reyes">
     <link rel="apple-touch-icon" href="https://appdesignmex.com/netbandera/wp-content/uploads/2025/10/Zone4Reyes-03-1.png">
-    
-    <!-- Vercel Speed Insights -->
-    <script defer src="/_vercel/speed-insights/script.js"></script>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -89,11 +87,19 @@
   "imports": {
     "react": "https://aistudiocdn.com/react@^19.2.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/"
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "vite": "https://aistudiocdn.com/vite@^7.1.9",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.0.4"
   }
 }
 </script>
-<script type="module" defer src="/index.tsx"></script>
+<!--
+  NOTE FOR PRODUCTION DEPLOYMENT:
+  This HTML file is for development and will not work correctly when deployed directly.
+  You must first build the project by running `npm run build`.
+  Then, upload the contents of the generated `dist` folder to your server.
+-->
+<script type="module" defer src="./index.tsx"></script>
 </head>
   <body>
     <div id="root"></div>

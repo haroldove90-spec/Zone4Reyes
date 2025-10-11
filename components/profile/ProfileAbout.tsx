@@ -5,6 +5,7 @@ import { Icon } from '../Icon';
 interface ProfileAboutProps {
   user: User;
   isPreview?: boolean;
+  onSeeAll?: () => void;
 }
 
 const InfoItem: React.FC<{iconPath: string; text: string | undefined}> = ({iconPath, text}) => {
@@ -17,7 +18,7 @@ const InfoItem: React.FC<{iconPath: string; text: string | undefined}> = ({iconP
     )
 }
 
-export const ProfileAbout: React.FC<ProfileAboutProps> = ({ user, isPreview = false }) => {
+export const ProfileAbout: React.FC<ProfileAboutProps> = ({ user, isPreview = false, onSeeAll }) => {
   return (
     <div className="bg-content-bg p-4 rounded-lg shadow-sm">
       <h3 className="text-xl font-bold text-text-primary mb-4">Información</h3>
@@ -28,7 +29,7 @@ export const ProfileAbout: React.FC<ProfileAboutProps> = ({ user, isPreview = fa
         {user.info?.contact && !isPreview && <InfoItem iconPath="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" text={user.info.contact} />}
       </div>
        {isPreview && (
-        <button className="w-full mt-4 bg-gray-200 text-text-primary font-semibold py-2 rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors">
+        <button onClick={onSeeAll} className="w-full mt-4 bg-gray-200 text-text-primary font-semibold py-2 rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors">
             Ver toda la información
         </button>
        )}

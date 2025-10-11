@@ -1,11 +1,12 @@
+
 import React, { useState, useRef } from 'react';
 import { Modal } from '../Modal';
 import { Icon } from '../Icon';
 import { VideoRecorder } from '../VideoRecorder';
+import { useData } from '../../context/DataContext';
 
 interface CreateStoryModalProps {
   onClose: () => void;
-  onCreateStory: (media: { type: 'image' | 'video'; url: string }) => void;
 }
 
 const fileToBase64 = (file: File): Promise<string> => {
@@ -17,7 +18,8 @@ const fileToBase64 = (file: File): Promise<string> => {
     });
 };
 
-export const CreateStoryModal: React.FC<CreateStoryModalProps> = ({ onClose, onCreateStory }) => {
+export const CreateStoryModal: React.FC<CreateStoryModalProps> = ({ onClose }) => {
+  const { handleCreateStory } = useData();
   const [media, setMedia] = useState<{ type: 'image' | 'video'; url: string } | null>(null);
   const [showRecorder, setShowRecorder] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -38,7 +40,8 @@ export const CreateStoryModal: React.FC<CreateStoryModalProps> = ({ onClose, onC
 
   const handleCreate = () => {
     if (media) {
-      onCreateStory(media);
+      handleCreateStory(media);
+      onClose();
     }
   };
 

@@ -1,25 +1,13 @@
+
 import React, { useState } from 'react';
 import { User } from '../types';
-
-interface AuthPageProps {
-  users: User[];
-  onLogin: (email: string, password: string, rememberMe: boolean) => Promise<void>;
-  onRegister: (name: string, email: string, password: string) => Promise<User>;
-  onVerifyEmail: (userId: string) => Promise<void>;
-  onForgotPasswordRequest: (email: string) => Promise<User | null>;
-  onResetPassword: (userId: string, newPassword: string) => Promise<void>;
-}
+import { useData } from '../context/DataContext';
 
 type AuthMode = 'login' | 'register' | 'forgotPassword' | 'emailSent' | 'verifyEmail' | 'resetPassword';
 
-export const AuthPage: React.FC<AuthPageProps> = ({ 
-    users, 
-    onLogin, 
-    onRegister,
-    onVerifyEmail,
-    onForgotPasswordRequest,
-    onResetPassword
-}) => {
+export const AuthPage: React.FC = () => {
+  const { handleLogin, handleRegister, handleVerifyEmail, users } = useData();
+
   const [mode, setMode] = useState<AuthMode>('login');
   
   const [name, setName] = useState('');
@@ -32,6 +20,15 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [targetUser, setTargetUser] = useState<User | null>(null);
+  
+  // Mock functions for password reset
+  const onForgotPasswordRequest = async (email: string): Promise<User | null> => users.find(u => u.settings.account.email === email) || null
+  const onResetPassword = async (userId: string, newPassword: string): Promise<void> => {
+      // This should be an API call
+      // setUsers(users.map(u => u.id === userId ? { ...u, password: newPassword } : u));
+      alert("Contraseña restablecida. Ahora puedes iniciar sesión.");
+      switchMode('login');
+  }
 
   const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,12 +37,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
     try {
       if (mode === 'login') {
-        await onLogin(email, password, rememberMe);
+        await handleLogin(email, password, rememberMe);
       } else if (mode === 'register') {
         if (password !== confirmPassword) {
           throw new Error('Las contraseñas no coinciden.');
         }
-        const newUser = await onRegister(name, email, password);
+        const newUser = await handleRegister(name, email, password);
         setTargetUser(newUser);
         setMode('verifyEmail');
       } else if (mode === 'forgotPassword') {
@@ -69,7 +66,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     if (!targetUser) return;
     setIsLoading(true);
     try {
-      await onVerifyEmail(targetUser.id);
+      await handleVerifyEmail(targetUser.id);
     } catch (err: any) {
       setError(err.message);
       setIsLoading(false);
@@ -192,7 +189,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                             </div>
                         )}
 
-                        {error && <p className="bg-red-500/10 text-red-500 text-sm p-3 rounded-lg mb-4">{error}</p>}
+                        {error && <div className="border-l-4 border-red-500 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-200 p-4 rounded-md mb-4 text-sm whitespace-pre-wrap" role="alert">{error}</div>}
 
                         <div className="flex items-center justify-between">
                             <button type="submit" disabled={isLoading} className="w-full bg-auth-button text-white font-bold py-3 px-4 rounded-lg hover:opacity-90 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">

@@ -1,5 +1,6 @@
+
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { User, Message, Conversation, Group } from '../../types';
+import { User, Message, Conversation } from '../../types';
 import { Icon } from '../Icon';
 
 const ConversationListItem: React.FC<{
@@ -10,7 +11,7 @@ const ConversationListItem: React.FC<{
 }> = ({ conversation, otherUser, onClick, currentUser }) => {
     const isUnread = !conversation.lastMessage.read && conversation.lastMessage.receiverId === currentUser.id;
     return (
-        <button onClick={onClick} className="w-full text-left p-2 flex items-center space-x-3 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-slate-700">
+        <a href={`#/chat/${otherUser.id}`} onClick={onClick} className="w-full text-left p-2 flex items-center space-x-3 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-slate-700">
              <div className="relative">
                 <img src={otherUser.avatarUrl} alt={otherUser.name} className="w-10 h-10 rounded-full" />
                 {isUnread && <span className="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-content-bg" />}
@@ -21,7 +22,7 @@ const ConversationListItem: React.FC<{
                     {conversation.lastMessage.content}
                 </p>
             </div>
-        </button>
+        </a>
     );
 };
 
@@ -30,10 +31,9 @@ interface ChatLauncherProps {
   currentUser: User;
   users: User[];
   messages: Message[];
-  onNavigate: (view: 'chat', data?: User | Group) => void;
 }
 
-export const ChatLauncher: React.FC<ChatLauncherProps> = ({ currentUser, users, messages, onNavigate }) => {
+export const ChatLauncher: React.FC<ChatLauncherProps> = ({ currentUser, users, messages }) => {
   const [isOpen, setIsOpen] = useState(false);
   const launcherRef = useRef<HTMLDivElement>(null);
 
@@ -86,7 +86,7 @@ export const ChatLauncher: React.FC<ChatLauncherProps> = ({ currentUser, users, 
                     key={convo.id}
                     conversation={convo}
                     otherUser={otherUser}
-                    onClick={() => { onNavigate('chat'); setIsOpen(false); }}
+                    onClick={() => setIsOpen(false)}
                     currentUser={currentUser}
                 />
               )

@@ -1,7 +1,7 @@
 const CACHE_NAME = 'zone4reyes-v1';
 const urlsToCache = [
-  '/',
-  '/index.html',
+  './',
+  './index.html',
   'https://appdesignmex.com/netbandera/wp-content/uploads/2025/10/Zone4Reyes-01-1.png',
   'https://cdn.tailwindcss.com'
 ];

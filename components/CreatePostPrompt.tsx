@@ -1,21 +1,17 @@
+
 import React from 'react';
 import { Icon } from './Icon';
-import { User, Group } from '../types';
 
-interface CreatePostPromptProps {
-    onNavigate: (view: 'auth' | 'profile' | 'advertise', data?: User | Group) => void;
-}
-
-export const CreatePostPrompt: React.FC<CreatePostPromptProps> = ({ onNavigate }) => {
+export const CreatePostPrompt: React.FC = () => {
   return (
     <div className="bg-content-bg p-4 rounded-lg shadow-sm">
         <div className="flex items-start space-x-3">
           <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
               <Icon path="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" className="w-6 h-6 text-gray-500" />
           </div>
-          <button onClick={() => onNavigate('auth')} className="w-full bg-background p-2 text-left text-text-secondary border border-divider rounded-lg hover:border-primary transition-colors">
+          <a href="#/auth" className="w-full bg-background p-2 text-left text-text-secondary border border-divider rounded-lg hover:border-primary transition-colors">
             ¿Qué estás pensando? Inicia sesión para publicar.
-          </button>
+          </a>
         </div>
         <div className="border-t border-divider mt-3 pt-3 flex justify-between items-center">
             <div className="flex space-x-1 sm:space-x-4">

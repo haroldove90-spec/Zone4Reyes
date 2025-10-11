@@ -1,14 +1,17 @@
+
 import React, { useMemo } from 'react';
 import { User } from '../../types';
+import { useData } from '../../context/DataContext';
 
 interface ProfileFriendsProps {
   user: User;
-  onViewProfile: (user: User) => void;
   isPreview?: boolean;
-  users: User[];
+  onSeeAll?: () => void;
 }
 
-export const ProfileFriends: React.FC<ProfileFriendsProps> = ({ user, onViewProfile, isPreview = false, users }) => {
+export const ProfileFriends: React.FC<ProfileFriendsProps> = ({ user, isPreview = false, onSeeAll }) => {
+  const { users } = useData();
+
   const friends = useMemo(() => {
     if (!user.friendIds || !users) return [];
     const friendsMap = new Map(users.map(u => [u.id, u]));
@@ -31,7 +34,7 @@ export const ProfileFriends: React.FC<ProfileFriendsProps> = ({ user, onViewProf
       <div className={`grid gap-2 ${isPreview ? 'grid-cols-3' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'}`}>
         {friendsToShow.map(friend => (
           <div key={friend.id}>
-            <a href="#" onClick={(e) => { e.preventDefault(); onViewProfile(friend); }} className="block group">
+            <a href={`#/profile/${friend.id}`} className="block group">
               <img src={friend.avatarUrl} alt={friend.name} className="w-full aspect-square object-cover rounded-lg" loading="lazy" />
               <p className="text-sm font-semibold text-text-primary mt-1 truncate group-hover:underline">{friend.name}</p>
             </a>
@@ -39,7 +42,7 @@ export const ProfileFriends: React.FC<ProfileFriendsProps> = ({ user, onViewProf
         ))}
       </div>
       {isPreview && friends.length > 9 && (
-         <button className="w-full mt-4 bg-gray-200 text-text-primary font-semibold py-2 rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors">
+         <button onClick={onSeeAll} className="w-full mt-4 bg-gray-200 text-text-primary font-semibold py-2 rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors">
             Ver todos los amigos
         </button>
       )}

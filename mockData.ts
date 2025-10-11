@@ -1,7 +1,7 @@
 // FIX: Renamed Notification to AppNotification to avoid conflict with DOM type
 import { User, Post, Message, AppNotification, Group, Advertisement, Story, UserSettings } from './types';
 
-const defaultSettings: UserSettings = {
+export const defaultSettings: UserSettings = {
   account: {
     email: '',
   },
@@ -26,31 +26,28 @@ const defaultSettings: UserSettings = {
 export const initialUsers: User[] = [
   {
     id: 'user-current',
-    name: 'Usuario Actual',
-    password: 'password123',
-    avatarUrl: 'https://picsum.photos/id/40/200/200',
+    name: 'Carlos Mendoza',
+    avatarUrl: 'https://i.pravatar.cc/150?u=carlos',
     profileUrl: '#',
-    coverUrl: 'https://picsum.photos/id/1015/1000/300',
-    bio: 'Vecino de Los Reyes de toda la vida. ¡A sus órdenes!',
+    password: 'password123',
+    coverUrl: 'https://picsum.photos/seed/carlos-cover/1000/300',
+    bio: 'Desarrollador y entusiasta de la tecnología. Conectando con la comunidad de Los Reyes.',
     info: {
-      work: 'Desarrollador en Tech Soluciones',
+      work: 'Desarrollador en App Design',
       education: 'Estudió en FES Iztacala',
       location: 'Vive en Los Reyes Iztacala',
-      contact: 'user.actual@email.com',
+      contact: 'carlos.mendoza@example.com',
     },
-    friendIds: ['user-1', 'user-2', 'user-3', 'user-4'],
+    friendIds: ['user-1', 'user-2', 'user-3'],
     photos: [
-      'https://picsum.photos/id/10/600/400',
-      'https://picsum.photos/id/20/600/400',
-      'https://picsum.photos/id/30/600/400',
-      'https://picsum.photos/id/40/600/400',
-      'https://picsum.photos/id/50/600/400',
-      'https://picsum.photos/id/60/600/400',
+      'https://picsum.photos/seed/carlos-1/500/500',
+      'https://picsum.photos/seed/carlos-2/500/500',
+      'https://picsum.photos/seed/carlos-3/500/500',
+      'https://picsum.photos/seed/carlos-4/500/500',
+      'https://picsum.photos/seed/carlos-5/500/500',
+      'https://picsum.photos/seed/carlos-6/500/500',
     ],
-    settings: {
-      ...defaultSettings,
-      account: { email: 'current.user@example.com' }
-    },
+    settings: { ...defaultSettings, account: { email: 'carlos@example.com' } },
     blockedUserIds: [],
     isActive: true,
     isVerified: true,
@@ -58,94 +55,87 @@ export const initialUsers: User[] = [
   {
     id: 'user-1',
     name: 'Ana García',
-    password: 'password123',
-    avatarUrl: 'https://picsum.photos/id/1027/200/200',
+    avatarUrl: 'https://i.pravatar.cc/150?u=ana',
     profileUrl: '#',
-    coverUrl: 'https://picsum.photos/id/1016/1000/300',
-    bio: 'Amante de los animales y el buen café.',
-    info: { work: 'Veterinaria en "Mascotas Felices"', location: 'Vive en Los Reyes Iztacala' },
-    friendIds: ['user-current', 'user-3'],
-    photos: ['https://picsum.photos/id/1027/600/400', 'https://picsum.photos/id/1028/600/400'],
-    settings: {
-        ...defaultSettings,
-        account: { email: 'ana.garcia@example.com' }
+    password: 'password123',
+    coverUrl: 'https://picsum.photos/seed/ana-cover/1000/300',
+    bio: 'Amante de la comida y los buenos momentos. Buscando las mejores garnachas de la zona.',
+    info: {
+      work: 'Chef en "El Sazón de la Abuela"',
+      location: 'Vive en Los Reyes Iztacala',
     },
+    friendIds: ['user-current', 'user-2'],
+    photos: [
+      'https://picsum.photos/seed/ana-1/500/500',
+      'https://picsum.photos/seed/ana-2/500/500',
+    ],
+    settings: { ...defaultSettings, account: { email: 'ana@example.com' } },
     blockedUserIds: [],
     isActive: true,
     isVerified: true,
   },
   {
     id: 'user-2',
-    name: 'Negocios Locales Reyes',
-    password: 'password123',
-    avatarUrl: 'https://picsum.photos/id/237/200/200',
+    name: 'Luis Hernández',
+    avatarUrl: 'https://i.pravatar.cc/150?u=luis',
     profileUrl: '#',
-    coverUrl: 'https://picsum.photos/id/1018/1000/300',
-    bio: 'Promoviendo el comercio local. ¡Apoya a tu comunidad!',
-    info: { work: 'Administrador de la página', location: 'Los Reyes Iztacala' },
-    friendIds: ['user-current'],
-    photos: ['https://picsum.photos/id/1060/600/400'],
-    settings: {
-        ...defaultSettings,
-        account: { email: 'negocios.reyes@example.com' }
+    password: 'password123',
+    coverUrl: 'https://picsum.photos/seed/luis-cover/1000/300',
+    bio: 'Emprendedor local. Dueño de "El Sazón de la Abuela". ¡Apoya el comercio local!',
+    info: {
+      work: 'Dueño de "El Sazón de la Abuela"',
+      location: 'Vive en Los Reyes Iztacala',
     },
+    friendIds: ['user-current', 'user-1', 'user-3'],
+    photos: [
+        'https://picsum.photos/seed/luis-1/500/500'
+    ],
+    settings: { ...defaultSettings, account: { email: 'luis@example.com' } },
     blockedUserIds: [],
     isActive: true,
     isVerified: true,
   },
   {
     id: 'user-3',
-    name: 'Carlos Mendoza',
+    name: 'Sofia Martinez',
+    avatarUrl: 'https://i.pravatar.cc/150?u=sofia',
+    profileUrl: '#',
     password: 'password123',
-    avatarUrl: 'https://picsum.photos/id/1005/200/200',
-    profileUrl: '#',
-    coverUrl: 'https://picsum.photos/id/1019/1000/300',
-    bio: 'Fanático del ciclismo de montaña y la tecnología.',
-    info: { work: 'Ingeniero en Sistemas', education: 'Estudió en IPN', location: 'Vive en Los Reyes Iztacala' },
-    friendIds: ['user-current', 'user-1'],
-    photos: ['https://picsum.photos/id/146/600/400', 'https://picsum.photos/id/147/600/400'],
-    settings: {
-        ...defaultSettings,
-        account: { email: 'carlos.mendoza@example.com' }
+    coverUrl: 'https://picsum.photos/seed/sofia-cover/1000/300',
+    bio: 'Estudiante y ciclista de fin de semana.',
+    info: {
+      education: 'Estudió en FES Iztacala',
+      location: 'Vive en Los Reyes Iztacala',
     },
-    blockedUserIds: [],
-    isActive: true,
-    isVerified: true,
-  },
-  {
-    id: 'user-4',
-    name: 'Haroldo Reyes',
-    password: 'chevropar#1970',
-    avatarUrl: 'https://picsum.photos/id/1011/200/200',
-    profileUrl: '#',
-    coverUrl: 'https://picsum.photos/id/1020/1000/300',
-    bio: 'Apasionado por los autos clásicos y la buena música.',
-    info: { work: 'Mecánico automotriz', location: 'Vive en Los Reyes Iztacala' },
-    friendIds: ['user-current'],
-    photos: ['https://picsum.photos/id/1011/600/400'],
-    settings: {
-        ...defaultSettings,
-        account: { email: 'haroldo.reyes@example.com' }
-    },
+    friendIds: ['user-current', 'user-2'],
+    photos: [
+      'https://picsum.photos/seed/sofia-1/500/500',
+      'https://picsum.photos/seed/sofia-2/500/500',
+      'https://picsum.photos/seed/sofia-3/500/500',
+    ],
+    settings: { ...defaultSettings, account: { email: 'sofia@example.com' } },
     blockedUserIds: [],
     isActive: true,
     isVerified: true,
   }
 ];
 
+
 export const initialPosts = (users: User[]): Post[] => {
+    if (users.length < 4) return [];
+    
     const userMap = new Map(users.map(u => [u.id, u]));
-    const userCurrent = userMap.get('user-current') || users[0];
-    const user1 = userMap.get('user-1') || users[1];
-    const user2 = userMap.get('user-2') || users[2];
-    const user3 = userMap.get('user-3') || users[3];
+    const user1 = users[1];
+    const user2 = users[2];
+    const user3 = users[3];
+    const userCurrent = users[0];
 
     return [
     {
         id: '1',
         author: user1,
         timestamp: 'Hace 2 horas',
-        content: '¡Hola vecinos! Alguien sabe de una buena tortillería por la zona que abra los domingos? Se me acabaron las tortillas. 😅 @Carlos Mendoza, tú que conoces bien, ¿alguna idea?',
+        content: '¡Hola vecinos! Alguien sabe de una buena tortillería por la zona que abra los domingos? Se me acabaron las tortillas. 😅 @' + user3.name + ', tú que conoces bien, ¿alguna idea?',
         media: null,
         likes: 12,
         comments: [
@@ -190,16 +180,14 @@ export const initialPosts = (users: User[]): Post[] => {
 };
 
 export const initialMessages: Message[] = [
-    { id: 'msg1', senderId: 'user-1', receiverId: 'user-current', content: '¡Hola! Vi tu publicación sobre la bici, ¿todavía está disponible?', timestamp: Date.now() - 1000 * 60 * 10, read: false },
-    { id: 'msg2', senderId: 'user-current', receiverId: 'user-1', content: 'Hola Ana, sí, ¡aún la tengo!', timestamp: Date.now() - 1000 * 60 * 9, read: true },
-    { id: 'msg3', senderId: 'user-3', receiverId: 'user-current', content: 'Oye, gracias por el dato de la tortillería el otro día. ¡Me salvaste!', timestamp: Date.now() - 1000 * 60 * 60 * 24, read: true },
+    // Messages will be dynamic in a real app, this is placeholder.
 ];
 
 // FIX: Renamed Notification to AppNotification to avoid conflict with DOM type
 export const initialNotifications = (users: User[]): AppNotification[] => {
-    const userMap = new Map(users.map(u => [u.id, u]));
-    const user1 = userMap.get('user-1') || users[1];
-    const user3 = userMap.get('user-3') || users[3];
+    if (users.length < 4) return [];
+    const user1 = users[1];
+    const user3 = users[3];
 
     return [
         { id: 'notif1', type: 'like', actor: user1, postId: '4', read: false, timestamp: Date.now() - 1000 * 60 * 5, message: 'le gustó tu publicación.' },
@@ -243,9 +231,9 @@ export const initialGroups: Group[] = [
 ];
 
 export const initialAdvertisements = (users: User[]): Advertisement[] => {
-  const userMap = new Map(users.map(u => [u.id, u]));
-  const user1 = userMap.get('user-1') || users[1];
-  const user3 = userMap.get('user-3') || users[3];
+  if (users.length < 4) return [];
+  const user1 = users[1];
+  const user3 = users[3];
 
   return [
     {
@@ -271,17 +259,17 @@ export const initialAdvertisements = (users: User[]): Advertisement[] => {
 };
 
 export const initialStories = (users: User[]): Story[] => {
+    if (users.length < 4) return [];
     const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000;
-    const userMap = new Map(users.map(u => [u.id, u]));
-    const user1 = userMap.get('user-1')!;
-    const user3 = userMap.get('user-3')!;
-    const user4 = userMap.get('user-4')!;
+    const user1 = users[1];
+    const user3 = users[3];
+    const user2 = users[2];
 
     return [
         { id: 'story-1', author: user1, mediaUrl: 'https://picsum.photos/id/1027/540/960', mediaType: 'image', timestamp: Date.now() - 2 * 60 * 60 * 1000 },
         { id: 'story-2', author: user3, mediaUrl: 'https://picsum.photos/id/146/540/960', mediaType: 'image', timestamp: Date.now() - 5 * 60 * 60 * 1000 },
         { id: 'story-3', author: user3, mediaUrl: 'https://picsum.photos/id/147/540/960', mediaType: 'image', timestamp: Date.now() - 4 * 60 * 60 * 1000 },
-        { id: 'story-4', author: user4, mediaUrl: 'https://picsum.photos/id/1011/540/960', mediaType: 'image', timestamp: Date.now() - 8 * 60 * 60 * 1000 },
+        { id: 'story-4', author: user2, mediaUrl: 'https://picsum.photos/id/1011/540/960', mediaType: 'image', timestamp: Date.now() - 8 * 60 * 60 * 1000 },
         // Expired story, should be filtered out
         { id: 'story-expired', author: user1, mediaUrl: 'https://picsum.photos/id/1/540/960', mediaType: 'image', timestamp: twentyFourHoursAgo - 10000 },
     ];

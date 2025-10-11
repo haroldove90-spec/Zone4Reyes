@@ -1,17 +1,12 @@
+
 import React, { useState, useMemo } from 'react';
-import { Post, User, Group } from '../types';
+import { Post } from '../types';
 import { Icon } from './Icon';
+import { useData } from '../context/DataContext';
 
 interface PostCardProps {
   post: Post;
-  onViewProfile: (user: User) => void;
-  currentUser: User | null;
-  onAddComment: (postId: string, commentContent: string) => void;
-  onToggleLike: (postId: string) => void;
-  onSharePost: (postId: string) => void;
   isLiked: boolean;
-  onNavigate: (view: 'auth' | 'profile' | 'advertise', data?: User | Group) => void;
-  users: User[];
 }
 
 const PostActionButton: React.FC<{ iconPath: string; label: string; onClick: () => void, isLiked?: boolean }> = ({ iconPath, label, onClick, isLiked = false }) => (
@@ -21,30 +16,30 @@ const PostActionButton: React.FC<{ iconPath: string; label: string; onClick: () 
     </button>
 );
 
-const CommentSection: React.FC<{ 
-    post: Post, 
-    currentUser: User, 
-    onAddComment: (postId: string, commentContent: string) => void,
-    onViewProfile: (user: User) => void;
-}> = ({ post, currentUser, onAddComment, onViewProfile }) => {
+const CommentSection: React.FC<{ post: Post }> = ({ post }) => {
+    const { currentUser, handleAddComment } = useData();
     const [newComment, setNewComment] = useState('');
 
     const handleSubmitComment = (e: React.FormEvent) => {
         e.preventDefault();
         if (newComment.trim()) {
-            onAddComment(post.id, newComment.trim());
+            handleAddComment(post.id, newComment.trim());
             setNewComment('');
         }
     };
+    
+    if (!currentUser) return null;
 
     return (
         <div className="px-4 py-2 border-t border-divider">
             <div className="space-y-3 mt-2">
                 {post.comments.map(comment => (
                     <div key={comment.id} className="flex items-start space-x-2">
-                        <img src={comment.author.avatarUrl} alt={comment.author.name} className="w-8 h-8 rounded-full cursor-pointer" onClick={() => onViewProfile(comment.author)} loading="lazy"/>
+                        <a href={`#/profile/${comment.author.id}`}>
+                          <img src={comment.author.avatarUrl} alt={comment.author.name} className="w-8 h-8 rounded-full cursor-pointer" loading="lazy"/>
+                        </a>
                         <div className="bg-background rounded-xl p-2 text-sm">
-                            <button onClick={() => onViewProfile(comment.author)} className="font-bold text-text-primary hover:underline">{comment.author.name}</button>
+                            <a href={`#/profile/${comment.author.id}`} className="font-bold text-text-primary hover:underline">{comment.author.name}</a>
                             <p className="text-text-primary">{comment.content}</p>
                         </div>
                     </div>
@@ -71,20 +66,21 @@ const CommentSection: React.FC<{
 };
 
 
-export const PostCard: React.FC<PostCardProps> = ({ post, onViewProfile, currentUser, onAddComment, onToggleLike, onSharePost, isLiked, onNavigate, users }) => {
+export const PostCard: React.FC<PostCardProps> = ({ post, isLiked }) => {
+  const { currentUser, users, handleToggleLike, handleSharePost, navigate } = useData();
   const [isCommentSectionOpen, setIsCommentSectionOpen] = useState(false);
   const [shareStatus, setShareStatus] = useState<'idle' | 'copied'>('idle');
 
   const handleInteraction = (action: (postId: string) => void) => {
     if (!currentUser) {
-        onNavigate('auth');
+        navigate('auth');
     } else {
         action(post.id);
     }
   };
 
   const handleShare = async () => {
-    if (!currentUser) { onNavigate('auth'); return; }
+    if (!currentUser) { navigate('auth'); return; }
 
     const postUrl = `${window.location.origin}/#post/${post.id}`;
     const shareData = {
@@ -96,7 +92,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onViewProfile, current
     if (navigator.share) {
       try {
         await navigator.share(shareData);
-        onSharePost(post.id);
+        handleSharePost(post.id);
       } catch (err) {
         console.log("Share action was cancelled or failed:", err);
       }
@@ -104,7 +100,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onViewProfile, current
       try {
         await navigator.clipboard.writeText(`${post.content}\n\n(De ${post.author.name} en Zone4Reyes)\n${postUrl}`);
         setShareStatus('copied');
-        onSharePost(post.id);
+        handleSharePost(post.id);
         setTimeout(() => setShareStatus('idle'), 2000);
       } catch (err) {
         alert('La función de compartir no está disponible en este navegador.');
@@ -121,7 +117,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onViewProfile, current
               const userName = part.substring(1).toLowerCase();
               const user = userMap.get(userName);
               if (user) {
-                  return <button key={index} onClick={() => onViewProfile(user)} className="font-semibold text-primary hover:underline">{part}</button>;
+                  return <a key={index} href={`#/profile/${user.id}`} className="font-semibold text-primary hover:underline">{part}</a>;
               }
           }
           return part;
@@ -132,11 +128,11 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onViewProfile, current
     <div className="bg-content-bg rounded-lg shadow-sm">
       <div className="p-4">
         <div className="flex items-center space-x-3">
-          <button onClick={() => onViewProfile(post.author)}>
+          <a href={`#/profile/${post.author.id}`}>
             <img src={post.author.avatarUrl} alt={post.author.name} className="w-10 h-10 rounded-full" loading="lazy" />
-          </button>
+          </a>
           <div>
-            <button onClick={() => onViewProfile(post.author)} className="font-bold text-text-primary hover:underline">{post.author.name}</button>
+            <a href={`#/profile/${post.author.id}`} className="font-bold text-text-primary hover:underline">{post.author.name}</a>
             <p className="text-sm text-text-secondary">{post.timestamp}</p>
           </div>
         </div>
@@ -166,7 +162,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onViewProfile, current
                 <PostActionButton 
                     iconPath="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.085a2 2 0 00-1.736.97l-1.9 3.8a2 2 0 00.23 2.16l3.333 4.444M7 20h-2a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" 
                     label="Me gusta" 
-                    onClick={() => handleInteraction(onToggleLike)}
+                    onClick={() => handleInteraction(handleToggleLike)}
                     isLiked={isLiked}
                 />
                 <PostActionButton 
@@ -174,7 +170,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onViewProfile, current
                     label="Comentar"
                     onClick={() => {
                         if (!currentUser) {
-                            onNavigate('auth');
+                            navigate('auth');
                         } else {
                             setIsCommentSectionOpen(!isCommentSectionOpen);
                         }
@@ -189,7 +185,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onViewProfile, current
         </div>
       </div>
       {currentUser && isCommentSectionOpen && (
-        <CommentSection post={post} currentUser={currentUser} onAddComment={onAddComment} onViewProfile={onViewProfile} />
+        <CommentSection post={post} />
       )}
     </div>
   );

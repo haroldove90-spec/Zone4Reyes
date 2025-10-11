@@ -1,3 +1,6 @@
+
+export type Navigate = (path: string) => void;
+
 export interface UserSettings {
   account: {
     email?: string;

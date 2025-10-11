@@ -1,30 +1,29 @@
+
 import React, { useState, useEffect } from 'react';
 import { Icon } from './Icon';
 import { User } from '../types';
 import { ThemeToggle } from './ThemeToggle';
+import { useData } from '../context/DataContext';
 
 interface HeaderProps {
-    onNavigate: (view: 'feed' | 'profile' | 'auth' | 'notifications' | 'advertise' | 'settings', user?: User) => void;
     currentUser: User | null;
     theme: string;
     toggleTheme: () => void;
     onLogout: () => void;
     unreadCount: number;
-    onSearch: (query: string) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
-    onNavigate, 
     currentUser, 
     theme, 
     toggleTheme, 
     onLogout, 
-    unreadCount,
-    onSearch
+    unreadCount
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const { navigate } = useData();
 
   useEffect(() => {
     // Set the initial state safely on the client
@@ -49,7 +48,9 @@ export const Header: React.FC<HeaderProps> = ({
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch(searchQuery);
+    if (searchQuery.trim()) {
+      navigate(`search?q=${encodeURIComponent(searchQuery)}`);
+    }
   };
 
   return (
@@ -66,9 +67,9 @@ export const Header: React.FC<HeaderProps> = ({
         
         <div className="h-12 flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <button onClick={() => onNavigate('feed')} className="transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-content-bg focus:ring-primary rounded-md">
+            <a href="#/feed" className="transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-content-bg focus:ring-primary rounded-md">
               <img src="https://appdesignmex.com/netbandera/wp-content/uploads/2025/10/Zone4Reyes-01-1.png" alt="Zone4Reyes Logo" className="h-[26px] md:h-7 lg:h-[30px] object-contain" />
-            </button>
+            </a>
             <form onSubmit={handleSearchSubmit} className="hidden md:flex items-center relative">
                 <input
                     type="text"
@@ -88,8 +89,8 @@ export const Header: React.FC<HeaderProps> = ({
             {currentUser ? (
               <>
                 <div className="relative">
-                    <button 
-                        onClick={() => onNavigate('notifications')}
+                    <a 
+                        href="#/notifications"
                         className="p-2 rounded-full text-text-secondary hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors relative"
                         aria-label="Notificaciones"
                     >
@@ -99,7 +100,7 @@ export const Header: React.FC<HeaderProps> = ({
                             {unreadCount}
                         </span>
                       )}
-                    </button>
+                    </a>
                 </div>
 
                 <div className="relative">
@@ -108,17 +109,17 @@ export const Header: React.FC<HeaderProps> = ({
                   </button>
                   {isMenuOpen && (
                     <div className="absolute right-0 mt-2 w-48 bg-content-bg rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 dark:ring-gray-700">
-                      <button onClick={() => { onNavigate('profile', currentUser); setIsMenuOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-text-primary hover:bg-gray-100 dark:hover:bg-gray-700">Mi Perfil</button>
-                      <button onClick={() => { onNavigate('settings'); setIsMenuOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-text-primary hover:bg-gray-100 dark:hover:bg-gray-700">Configuración</button>
+                      <a href={`#/profile/${currentUser.id}`} onClick={() => setIsMenuOpen(false)} className="w-full text-left block px-4 py-2 text-sm text-text-primary hover:bg-gray-100 dark:hover:bg-gray-700">Mi Perfil</a>
+                      <a href="#/settings" onClick={() => setIsMenuOpen(false)} className="w-full text-left block px-4 py-2 text-sm text-text-primary hover:bg-gray-100 dark:hover:bg-gray-700">Configuración</a>
                       <button onClick={() => { onLogout(); setIsMenuOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-text-primary hover:bg-gray-100 dark:hover:bg-gray-700">Cerrar Sesión</button>
                     </div>
                   )}
                 </div>
               </>
             ) : (
-                <button onClick={() => onNavigate('auth')} className="bg-auth-button text-white font-bold py-2 px-4 rounded-lg hover:opacity-90 transition-colors">
+                <a href="#/auth" className="bg-auth-button text-white font-bold py-2 px-4 rounded-lg hover:opacity-90 transition-colors">
                     Entrar / Registrarse
-                </button>
+                </a>
             )}
           </div>
         </div>
