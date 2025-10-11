@@ -140,10 +140,12 @@ const AppContent: React.FC = () => {
 };
 
 
-export const App: React.FC = () => {
+const App: React.FC = () => {
   return (
     <DataProvider>
       <AppContent />
     </DataProvider>
   );
 }
+
+export default App;

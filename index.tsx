@@ -1,8 +1,7 @@
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-// FIX: Changed default import to named import for App component.
-import { App } from './App';
+// Using default import for the App component to resolve build error.
+import App from './App';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
