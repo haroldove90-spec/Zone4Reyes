@@ -1,6 +1,9 @@
+
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { User, Message, Conversation } from '../types';
 import { Icon } from './Icon';
+import { useData } from '../context/DataContext';
+import { useRouter } from '../hooks/useRouter';
 
 const ConversationListItem: React.FC<{
     conversation: Conversation;
@@ -39,25 +42,29 @@ const ChatMessageBubble: React.FC<{ message: Message; isCurrentUser: boolean }> 
     </div>
 );
 
-interface ChatPageProps {
-    currentUser: User;
-    users: User[];
-    messages: Message[];
-    onSendMessage: (receiverId: string, content: string) => void;
-    onViewProfile: (user: User) => void;
-    onMarkMessagesAsRead: (conversationId: string) => void;
-    targetUser: User | null;
-    onChatStarted: () => void;
-}
 
-export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, users, messages, onSendMessage, onViewProfile, onMarkMessagesAsRead, targetUser, onChatStarted }) => {
+export const ChatPage: React.FC = () => {
+    const { currentUser, users, messages, handleSendMessage, navigate, handleMarkMessagesAsRead } = useData();
+    const { params } = useRouter();
     const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
     const [newMessage, setNewMessage] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    const targetUserFromUrl = useMemo(() => {
+        const targetUserId = params.id || null;
+        return users.find(u => u.id === targetUserId) || null;
+    }, [params.id, users]);
+
+    useEffect(() => {
+        if (!currentUser) {
+            navigate('auth');
+        }
+    }, [currentUser, navigate]);
+
     const userMap = useMemo(() => new Map(users.map(u => [u.id, u])), [users]);
 
     const conversations = useMemo<Conversation[]>(() => {
+        if (!currentUser) return [];
         const convos: Record<string, Conversation> = {};
         messages.forEach(msg => {
             const otherUserId = msg.senderId === currentUser.id ? msg.receiverId : msg.senderId;
@@ -72,13 +79,12 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, users, messages
             }
         });
 
-        // If navigating from a profile and no conversation exists, create a placeholder
-        if (targetUser) {
-            const conversationKey = [currentUser.id, targetUser.id].sort().join('-');
+        if (targetUserFromUrl) {
+            const conversationKey = [currentUser.id, targetUserFromUrl.id].sort().join('-');
             if (!convos[conversationKey]) {
                 convos[conversationKey] = {
                     id: conversationKey,
-                    participants: [currentUser.id, targetUser.id] as [string, string],
+                    participants: [currentUser.id, targetUserFromUrl.id] as [string, string],
                     lastMessage: {
                         id: 'placeholder',
                         senderId: '',
@@ -92,21 +98,16 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, users, messages
         }
 
         return Object.values(convos).sort((a, b) => b.lastMessage.timestamp - a.lastMessage.timestamp);
-    }, [messages, currentUser.id, targetUser]);
+    }, [messages, currentUser, targetUserFromUrl]);
 
     useEffect(() => {
-        if (!activeConversationId && conversations.length > 0) {
+        if (targetUserFromUrl && currentUser) {
+            const conversationKey = [currentUser.id, targetUserFromUrl.id].sort().join('-');
+            setActiveConversationId(conversationKey);
+        } else if (!activeConversationId && conversations.length > 0) {
             setActiveConversationId(conversations[0].id);
         }
-    }, [conversations, activeConversationId]);
-    
-    useEffect(() => {
-        if (targetUser) {
-            const conversationKey = [currentUser.id, targetUser.id].sort().join('-');
-            setActiveConversationId(conversationKey);
-            onChatStarted(); // Clear the target user in App state after we've used it.
-        }
-    }, [targetUser, currentUser.id, onChatStarted]);
+    }, [conversations, activeConversationId, targetUserFromUrl, currentUser]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -114,44 +115,46 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, users, messages
 
     useEffect(() => {
         if (activeConversationId) {
-            onMarkMessagesAsRead(activeConversationId);
+            handleMarkMessagesAsRead(activeConversationId);
         }
-    }, [activeConversationId, onMarkMessagesAsRead]);
+    }, [activeConversationId, handleMarkMessagesAsRead]);
 
     const activeConversation = conversations.find(c => c.id === activeConversationId);
     
     const otherUser = useMemo(() => {
+        if (!currentUser) return null;
         if (activeConversation) {
             const otherUserId = activeConversation.participants.find(p => p !== currentUser.id)!;
             return userMap.get(otherUserId);
         }
-        if (activeConversationId) { // Case for a new, unsaved conversation
+        if (activeConversationId) { 
             const participants = activeConversationId.split('-');
             const otherUserId = participants.find(p => p !== currentUser.id)!;
             return userMap.get(otherUserId);
         }
         return null;
-    }, [activeConversation, activeConversationId, currentUser.id, userMap]);
+    }, [activeConversation, activeConversationId, currentUser, userMap]);
 
     const activeMessages = useMemo(() => {
-        if (!otherUser) return [];
+        if (!otherUser || !currentUser) return [];
         return messages.filter(msg => 
             (msg.senderId === currentUser.id && msg.receiverId === otherUser.id) ||
             (msg.senderId === otherUser.id && msg.receiverId === currentUser.id)
         ).sort((a, b) => a.timestamp - b.timestamp);
-    }, [activeConversationId, messages, currentUser.id, otherUser]);
+    }, [messages, currentUser, otherUser]);
 
-    const handleSendMessage = (e: React.FormEvent) => {
+    const handleSendMessageSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (newMessage.trim() && otherUser) {
-            onSendMessage(otherUser.id, newMessage.trim());
+            handleSendMessage(otherUser.id, newMessage.trim());
             setNewMessage('');
         }
     };
+    
+    if (!currentUser) return null;
 
     return (
         <div className="flex h-[calc(100vh_-_12rem)] md:h-[calc(100vh_-_8rem)] bg-content-bg rounded-lg shadow-sm overflow-hidden">
-            {/* Conversations List (Hidden on mobile for now, can be a separate view) */}
             <div className="hidden md:flex w-1/3 border-r border-divider flex-col">
                 <div className="p-4 border-b border-divider flex-shrink-0">
                     <h2 className="text-xl font-bold text-text-primary">Mensajes</h2>
@@ -174,14 +177,13 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, users, messages
                 </div>
             </div>
 
-            {/* Chat Window */}
             <div className="w-full md:w-2/3 flex flex-col">
                 {otherUser ? (
                     <>
                         <div className="p-3 border-b border-divider flex items-center space-x-3 flex-shrink-0">
                             <img src={otherUser.avatarUrl} alt={otherUser.name} className="w-10 h-10 rounded-full" />
                             <div>
-                                <button onClick={() => onViewProfile(otherUser)} className="font-bold text-text-primary hover:underline">{otherUser.name}</button>
+                                <button onClick={() => navigate(`profile/${otherUser.id}`)} className="font-bold text-text-primary hover:underline">{otherUser.name}</button>
                                 <p className="text-xs text-text-secondary">En línea</p>
                             </div>
                         </div>
@@ -194,7 +196,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({ currentUser, users, messages
                         </div>
 
                         <div className="p-4 border-t border-divider flex-shrink-0">
-                            <form onSubmit={handleSendMessage} className="flex items-center space-x-3">
+                            <form onSubmit={handleSendMessageSubmit} className="flex items-center space-x-3">
                                 <input
                                     type="text"
                                     value={newMessage}

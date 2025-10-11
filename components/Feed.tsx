@@ -15,9 +15,8 @@ export const Feed: React.FC = () => {
         handleCreatePost,
         currentUser, 
         likedPosts,
-        users,
         handleViewStory,
-        handleCreateStory,
+        setCreateStoryModalOpen,
         isLoadingFeed,
         feedError
     } = useData();
@@ -39,7 +38,7 @@ export const Feed: React.FC = () => {
             currentUser={currentUser}
             seenStories={seenStories}
             onViewStory={handleViewStory}
-            onCreateStory={handleCreateStory}
+            onCreateStory={() => setCreateStoryModalOpen(true)}
         />
         {currentUser ? (
             <CreatePost onCreatePost={handleCreatePost} currentUser={currentUser} />

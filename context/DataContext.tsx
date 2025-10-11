@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import {
   User,
@@ -11,16 +12,9 @@ import {
   UserSettings,
 } from '../types';
 import {
-  initialUsers,
-  initialPosts,
   initialMessages,
   initialNotifications,
-  initialGroups,
-  initialAdvertisements,
-  initialStories,
-} from '../mockData';
-
-const API_BASE_URL = '/zone4reyes/api';
+} from '../initialData'; // Some mock data might still be used for non-persistent features
 
 interface DataContextType {
   theme: string;
@@ -58,13 +52,15 @@ interface DataContextType {
   handleUpdateProfile: (updatedData: Partial<User>) => void;
   handleSendMessage: (receiverId: string, content: string) => void;
   handleMarkMessagesAsRead: (conversationId: string) => void;
-  // FIX: Added settings handlers
   handleUpdateSettings: (updatedSettings: Partial<UserSettings>) => void;
   handleChangePassword: (newPassword: string) => void;
   handleDeactivateAccount: () => void;
   handleDeleteAccount: () => void;
   handleBlockUser: (userId: string) => void;
   handleUnblockUser: (userId: string) => void;
+  handleCreateGroup: (name: string, description: string, privacy: 'public' | 'private') => void;
+  handleJoinGroup: (groupId: string) => void;
+  handleCreateAdvertisement: (adData: Omit<Advertisement, 'id' | 'author' | 'timestamp'>) => void;
   
   // Navigation
   navigate: (path: string) => void;
@@ -107,53 +103,36 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setIsLoadingFeed(true);
             setFeedError(null);
             try {
-                const endpoints = {
-                    users: `${API_BASE_URL}/data.php?get=users`,
-                    posts: `${API_BASE_URL}/data.php?get=posts`,
-                    stories: `${API_BASE_URL}/data.php?get=stories`,
-                    groups: `${API_BASE_URL}/data.php?get=groups`,
-                    advertisements: `${API_BASE_URL}/data.php?get=advertisements`,
-                };
+                const [usersRes, postsRes, storiesRes] = await Promise.all([
+                    fetch('/api/users'),
+                    fetch('/api/posts'),
+                    fetch('/api/stories'),
+                ]);
 
-                const responses = await Promise.all(Object.values(endpoints).map(url => fetch(url)));
-
-                for (const res of responses) {
-                    if (!res.ok) throw new Error(`API call failed for ${res.url} with status ${res.status}`);
+                if (!usersRes.ok || !postsRes.ok || !storiesRes.ok) {
+                    throw new Error('Failed to fetch initial data from API');
                 }
                 
-                const [usersRes, postsRes, storiesRes, groupsRes, adsRes] = responses;
-
-                const fetchedUsers: User[] = await usersRes.json();
-                const fetchedPosts: Post[] = await postsRes.json();
-                const fetchedStories: Story[] = await storiesRes.json();
-                const fetchedGroups: Group[] = await groupsRes.json();
-                const fetchedAds: Advertisement[] = await adsRes.json();
+                const { users: fetchedUsers } = await usersRes.json();
+                const { posts: fetchedPosts } = await postsRes.json();
+                const { stories: fetchedStories } = await storiesRes.json();
                 
                 setUsers(fetchedUsers);
                 setPosts(fetchedPosts);
-                setStories(fetchedStories.filter(story => Date.now() - story.timestamp < 24 * 60 * 60 * 1000));
-                setGroups(fetchedGroups);
-                setAdvertisements(fetchedAds);
+                setStories(fetchedStories.filter((story: Story) => Date.now() - story.timestamp < 24 * 60 * 60 * 1000));
                 
+                // Keep some mock data for features not yet migrated
                 setNotifications(initialNotifications(fetchedUsers));
                 setMessages(initialMessages);
 
             } catch (error) {
-                console.error("Error fetching data from API, falling back to mock data:", error);
+                console.error("Error fetching data from API:", error);
                 setFeedError(
                     <>
                         <strong className="font-bold">Error de Conexión.</strong>
-                        <span className="block sm:inline"> No se pudo conectar a la base de datos. Mostrando datos de ejemplo para demostración.</span>
+                        <span className="block sm:inline"> No se pudo conectar a la base de datos. Por favor, revisa tu conexión o la configuración del servidor.</span>
                     </>
                 );
-                // Fallback to mock data
-                setUsers(initialUsers);
-                setPosts(initialPosts(initialUsers));
-                setStories(initialStories(initialUsers).filter(story => Date.now() - story.timestamp < 24 * 60 * 60 * 1000));
-                setGroups(initialGroups);
-                setAdvertisements(initialAdvertisements(initialUsers));
-                setNotifications(initialNotifications(initialUsers));
-                setMessages(initialMessages);
             } finally {
                 setIsLoadingFeed(false);
             }
@@ -187,7 +166,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, []);
 
     const handleLogin = async (email: string, password: string, rememberMe: boolean) => {
-        // ... (API call logic remains the same)
         const user = users.find(u => u.settings.account.email === email && u.password === password);
         if (user) {
             if (!user.isVerified) throw new Error('Por favor, verifica tu correo electrónico.');
@@ -206,10 +184,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [navigate]);
 
     const handleRegister = async (name: string, email: string, password: string): Promise<User> => {
-        // ... (API call logic remains the same)
-        const newUser: User = { ...initialUsers[0], id: `user-${Date.now()}`, name, settings: { ...initialUsers[0].settings, account: {email}}, isVerified: false };
-        setUsers(prev => [...prev, newUser]);
-        return newUser;
+        throw new Error("Register functionality should now be handled by a dedicated API endpoint.");
     };
     
     const handleVerifyEmail = async (userId: string) => {
@@ -225,20 +200,44 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
        }
     };
     
-    const handleCreatePost = (content: string, media: { type: 'image' | 'video'; url: string } | null) => {
+    const handleCreatePost = async (content: string, media: { type: 'image' | 'video'; url: string } | null) => {
         if (!currentUser) return;
+
+        // Optimistic update
+        const tempId = `temp-post-${Date.now()}`;
         const newPost: Post = {
-          id: `post-${Date.now()}`,
+          id: tempId,
           author: currentUser,
           timestamp: 'Ahora mismo',
           content, media, likes: 0, comments: [], shares: 0
         };
-        setPosts([newPost, ...posts]);
+        setPosts(prevPosts => [newPost, ...prevPosts]);
+
+        try {
+            const response = await fetch('/api/posts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content, media, authorId: currentUser.id }),
+            });
+            if (!response.ok) throw new Error('Failed to create post');
+            
+            const { post: createdPost } = await response.json();
+            // Replace temporary post with the real one from the server
+            setPosts(prevPosts => prevPosts.map(p => p.id === tempId ? createdPost : p));
+
+        } catch (error) {
+            console.error("Error creating post:", error);
+            // Rollback optimistic update
+            setPosts(prevPosts => prevPosts.filter(p => p.id !== tempId));
+            alert("Error al publicar. Inténtalo de nuevo.");
+        }
     };
       
     const handleToggleLike = (postId: string) => {
         if (!currentUser) { navigate('auth'); return; }
         const isLiked = likedPosts.has(postId);
+        
+        // Optimistic update
         setLikedPosts(prev => {
           const newSet = new Set(prev);
           isLiked ? newSet.delete(postId) : newSet.add(postId);
@@ -247,6 +246,20 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setPosts(prevPosts => prevPosts.map(p => 
             p.id === postId ? { ...p, likes: isLiked ? p.likes - 1 : p.likes + 1 } : p
         ));
+        
+        // API call in background
+        fetch(`/api/posts/${postId}/like`, { method: 'POST' }).catch(error => {
+            console.error("Error toggling like:", error);
+            // Rollback optimistic update
+             setLikedPosts(prev => {
+                const newSet = new Set(prev);
+                isLiked ? newSet.add(postId) : newSet.delete(postId);
+                return newSet;
+            });
+            setPosts(prevPosts => prevPosts.map(p => 
+                p.id === postId ? { ...p, likes: isLiked ? p.likes + 1 : p.likes - 1 } : p
+            ));
+        });
     };
     
     const handleAddComment = (postId: string, commentContent: string) => {
@@ -355,6 +368,39 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
     }, [currentUser, handleUpdateProfile]);
 
+    const handleCreateGroup = useCallback((name: string, description: string, privacy: 'public' | 'private') => {
+        if (!currentUser) return;
+        const newGroup: Group = {
+            id: `group-${Date.now()}`,
+            name,
+            description,
+            coverUrl: `https://picsum.photos/seed/${Date.now()}/800/200`,
+            privacy,
+            members: [{ userId: currentUser.id, role: 'admin' }],
+        };
+        setGroups(prev => [newGroup, ...prev]);
+    }, [currentUser]);
+
+    const handleJoinGroup = useCallback((groupId: string) => {
+        if (!currentUser) { navigate('auth'); return; }
+        setGroups(prevGroups => prevGroups.map(g => 
+            g.id === groupId 
+            ? { ...g, members: [...g.members, { userId: currentUser.id, role: 'member'}] } 
+            : g
+        ));
+    }, [currentUser, navigate]);
+    
+    const handleCreateAdvertisement = useCallback((adData: Omit<Advertisement, 'id' | 'author' | 'timestamp'>) => {
+        if(!currentUser) return;
+        const newAd: Advertisement = {
+            ...adData,
+            id: `ad-${Date.now()}`,
+            author: currentUser,
+            timestamp: Date.now(),
+        };
+        setAdvertisements(prev => [newAd, ...prev]);
+    }, [currentUser]);
+
     const storiesByAuthor = useMemo(() => {
         const grouped: Record<string, { author: User; stories: Story[] }> = {};
         stories.forEach(story => {
@@ -377,6 +423,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         handleUpdateProfile, handleSendMessage, handleMarkMessagesAsRead,
         handleUpdateSettings, handleChangePassword, handleDeactivateAccount,
         handleDeleteAccount, handleBlockUser, handleUnblockUser,
+        handleCreateGroup, handleJoinGroup, handleCreateAdvertisement,
         navigate,
     };
 

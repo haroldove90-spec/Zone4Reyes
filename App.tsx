@@ -25,10 +25,6 @@ const AppContent: React.FC = () => {
   const { 
     currentUser, 
     users,
-    posts,
-    likedPosts,
-    groups,
-    advertisements,
     notifications,
     messages,
     theme, 
@@ -53,9 +49,7 @@ const AppContent: React.FC = () => {
       case 'auth':
         return <AuthPage />;
       case 'chat':
-        const targetUserId = params.id || null;
-        const targetUser = users.find(u => u.id === targetUserId) || null;
-        return <ChatPage initialTargetUser={targetUser} />;
+        return <ChatPage />;
       case 'notifications':
         return <NotificationsPage />;
       case 'search':

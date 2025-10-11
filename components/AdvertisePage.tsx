@@ -1,7 +1,9 @@
+
 import React, { useState, useRef } from 'react';
 import { User, Advertisement } from '../types';
 import { Icon } from './Icon';
 import { VideoRecorder } from './VideoRecorder';
+import { useData } from '../context/DataContext';
 
 const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -39,13 +41,8 @@ const AdCard: React.FC<{ ad: Advertisement }> = ({ ad }) => (
   </div>
 );
 
-interface AdvertisePageProps {
-  currentUser: User;
-  advertisements: Advertisement[];
-  onCreateAdvertisement: (ad: Omit<Advertisement, 'id' | 'author' | 'timestamp'>) => void;
-}
-
-export const AdvertisePage: React.FC<AdvertisePageProps> = ({ currentUser, advertisements, onCreateAdvertisement }) => {
+export const AdvertisePage: React.FC = () => {
+  const { currentUser, advertisements, handleCreateAdvertisement } = useData();
   const [adType, setAdType] = useState<'flyer' | 'content' | 'video'>('flyer');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -77,7 +74,7 @@ export const AdvertisePage: React.FC<AdvertisePageProps> = ({ currentUser, adver
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (title.trim() && description.trim()) {
-      onCreateAdvertisement({
+      handleCreateAdvertisement({
         type: adType,
         title,
         description,
@@ -92,11 +89,12 @@ export const AdvertisePage: React.FC<AdvertisePageProps> = ({ currentUser, adver
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
-
-  // Fix: Simplified condition for submission. An ad requires title and description.
-  // If it's not a 'content' ad, it also requires media. The previous logic had a
-  // redundant check that caused a type error.
+  
   const canSubmit = title.trim() && description.trim() && (adType === 'content' || media);
+
+  if (!currentUser) {
+    return <div className="text-center p-8">Por favor, inicia sesión para crear un anuncio.</div>;
+  }
 
   return (
     <>

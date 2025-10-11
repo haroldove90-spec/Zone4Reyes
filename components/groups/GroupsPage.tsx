@@ -1,19 +1,21 @@
-import React, { useState } from 'react';
+
+import React, { useState, useMemo } from 'react';
 import { Group, User } from '../../types';
 import { Icon } from '../Icon';
 import { GroupCard } from './GroupCard';
 import { CreateGroupModal } from './CreateGroupModal';
+import { useData } from '../../context/DataContext';
 
-interface GroupsPageProps {
-  currentUser: User;
-  groups: Group[];
-  onCreateGroup: (name: string, description: string, privacy: 'public' | 'private') => void;
-  onJoinGroup: (groupId: string) => void;
-  usersMap: Map<string, User>;
-}
-
-export const GroupsPage: React.FC<GroupsPageProps> = ({ currentUser, groups, onCreateGroup, onJoinGroup, usersMap }) => {
+export const GroupsPage: React.FC = () => {
+  const { currentUser, groups, handleCreateGroup, handleJoinGroup, users } = useData();
   const [isCreateModalOpen, setCreateModalOpen] = useState(false);
+
+  const usersMap = useMemo(() => new Map(users.map(u => [u.id, u])), [users]);
+
+  if (!currentUser) {
+    // Or a redirect, this is a safeguard
+    return <div className="text-center p-8">Por favor, inicia sesión para ver los grupos.</div>;
+  }
 
   const myGroups = groups.filter(g => g.members.some(m => m.userId === currentUser.id));
   const discoverGroups = groups.filter(g => !g.members.some(m => m.userId === currentUser.id));
@@ -23,7 +25,7 @@ export const GroupsPage: React.FC<GroupsPageProps> = ({ currentUser, groups, onC
       {isCreateModalOpen && (
         <CreateGroupModal 
             onClose={() => setCreateModalOpen(false)} 
-            onCreate={onCreateGroup} 
+            onCreate={handleCreateGroup} 
         />
       )}
       <div className="bg-content-bg rounded-lg shadow-sm p-4 flex justify-between items-center">
@@ -42,7 +44,7 @@ export const GroupsPage: React.FC<GroupsPageProps> = ({ currentUser, groups, onC
           <h2 className="text-xl font-bold text-text-primary mb-3">Mis Grupos</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {myGroups.map(group => (
-              <GroupCard key={group.id} group={group} onJoin={onJoinGroup} currentUser={currentUser} usersMap={usersMap} />
+              <GroupCard key={group.id} group={group} onJoin={handleJoinGroup} currentUser={currentUser} usersMap={usersMap} />
             ))}
           </div>
         </section>
@@ -53,7 +55,7 @@ export const GroupsPage: React.FC<GroupsPageProps> = ({ currentUser, groups, onC
           <h2 className="text-xl font-bold text-text-primary mb-3">Descubrir Grupos</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {discoverGroups.map(group => (
-              <GroupCard key={group.id} group={group} onJoin={onJoinGroup} currentUser={currentUser} usersMap={usersMap} />
+              <GroupCard key={group.id} group={group} onJoin={handleJoinGroup} currentUser={currentUser} usersMap={usersMap} />
             ))}
           </div>
         </section>

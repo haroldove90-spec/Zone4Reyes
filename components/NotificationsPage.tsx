@@ -2,14 +2,9 @@
 
 import React from 'react';
 // FIX: Renamed Notification to AppNotification to avoid conflict with DOM type
-import { AppNotification, User, Group } from '../types';
+import { AppNotification, User } from '../types';
 import { Icon } from './Icon';
-
-interface NotificationsPageProps {
-  // FIX: Renamed Notification to AppNotification
-  notifications: AppNotification[];
-  onNavigate: (view: 'profile', user: User) => void;
-}
+import { useData } from '../context/DataContext';
 
 const timeAgo = (timestamp: number) => {
     const seconds = Math.floor((new Date().getTime() - timestamp) / 1000);
@@ -45,9 +40,14 @@ const NotificationIcon: React.FC<{type: AppNotification['type']}> = ({type}) => 
     )
 }
 
-export const NotificationsPage: React.FC<NotificationsPageProps> = ({ notifications, onNavigate }) => {
+export const NotificationsPage: React.FC = () => {
+  const { notifications, navigate } = useData();
   const unreadNotifications = notifications.filter(n => !n.read);
   const readNotifications = notifications.filter(n => n.read);
+
+  const handleNavigateToProfile = (user: User) => {
+    navigate(`profile/${user.id}`);
+  };
   
   return (
     <div className="w-full max-w-3xl mx-auto space-y-6">
@@ -67,7 +67,7 @@ export const NotificationsPage: React.FC<NotificationsPageProps> = ({ notificati
                   </div>
                   <div className="flex-1">
                     <p className="text-text-primary">
-                      <button onClick={() => onNavigate('profile', notif.actor)} className="font-bold hover:underline">{notif.actor.name}</button> {notif.message}
+                      <button onClick={() => handleNavigateToProfile(notif.actor)} className="font-bold hover:underline">{notif.actor.name}</button> {notif.message}
                     </p>
                     <p className="text-sm font-bold text-primary">{timeAgo(notif.timestamp)}</p>
                   </div>
@@ -91,7 +91,7 @@ export const NotificationsPage: React.FC<NotificationsPageProps> = ({ notificati
                   </div>
                   <div className="flex-1">
                     <p className="text-text-primary">
-                      <button onClick={() => onNavigate('profile', notif.actor)} className="font-bold hover:underline">{notif.actor.name}</button> {notif.message}
+                      <button onClick={() => handleNavigateToProfile(notif.actor)} className="font-bold hover:underline">{notif.actor.name}</button> {notif.message}
                     </p>
                     <p className="text-sm text-text-secondary">{timeAgo(notif.timestamp)}</p>
                   </div>
