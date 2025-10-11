@@ -1,19 +1,19 @@
 import { sql } from '@vercel/postgres';
-import { NextApiResponse, NextApiRequest } from 'next';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
  
 export default async function handler(
-  request: NextApiRequest,
-  response: NextApiResponse,
+  request: VercelRequest,
+  response: VercelResponse,
 ) {
   try {
     const { rows: users } = await sql`
       SELECT 
         id, 
         name, 
-        avatar_url, 
-        cover_url, 
+        avatar_url AS "avatarUrl", 
+        cover_url AS "coverUrl", 
         bio,
-        is_verified 
+        is_verified AS "isVerified"
       FROM users;
     `;
     return response.status(200).json({ users });

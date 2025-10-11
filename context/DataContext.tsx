@@ -184,7 +184,23 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [navigate]);
 
     const handleRegister = async (name: string, email: string, password: string): Promise<User> => {
-        throw new Error("Register functionality should now be handled by a dedicated API endpoint.");
+        const response = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, password }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to register.');
+        }
+        
+        const newUser = data.user;
+        
+        setUsers(prevUsers => [...prevUsers, newUser]);
+        
+        return newUser;
     };
     
     const handleVerifyEmail = async (userId: string) => {
