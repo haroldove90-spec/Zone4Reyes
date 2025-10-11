@@ -1,6 +1,30 @@
 import { sql } from '@vercel/postgres';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { UserSettings } from '../types';
+
+// Duplicated type definition to resolve build error on Vercel.
+// API routes cannot import from outside the /api directory.
+interface UserSettings {
+  account: {
+    email?: string;
+    phone?: string;
+  };
+  privacy: {
+    postVisibility: 'public' | 'friends' | 'only_me';
+    profileVisibility: 'public' | 'friends';
+    messagePrivacy: 'public' | 'friends';
+    searchPrivacy: 'public' | 'friends';
+  };
+  notifications: {
+    likes: boolean;
+    comments: boolean;
+    mentions: boolean;
+    messages: boolean;
+    groupUpdates: boolean;
+  };
+  general: {
+    language: 'es' | 'en';
+  };
+}
 
 // Default settings for a new user
 const defaultSettings: UserSettings = {
