@@ -1,6 +1,6 @@
 import { sql } from '@vercel/postgres';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { UserSettings } from '../../types';
+import { UserSettings } from '../types';
 
 // Default settings for a new user
 const defaultSettings: UserSettings = {
